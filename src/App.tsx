@@ -531,6 +531,101 @@ function AuthScreen({ onAuth }: { onAuth: () => void }) {
   );
 }
 
+// ─── Reset Password Screen ────────────────────────────────────────────────────
+
+function ResetPasswordScreen() {
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const handleResetPassword = async () => {
+    setError('');
+    if (!newPassword || !confirmPassword) {
+      setError('Please enter your new password.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
+    const { error: e } = await supabase.auth.updateUser({ password: newPassword });
+    if (e) {
+      setError(e.message);
+    } else {
+      setSuccess(true);
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 3000);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ fontFamily: "'Inter', sans-serif", background: '#07080f', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
+      <div style={{ width: '100%', maxWidth: 420 }}>
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <div style={{ fontSize: 11, color: '#2d3050', letterSpacing: '0.18em', marginBottom: 14, fontWeight: 600 }}>AI AUTOMATION MASTERY ROADMAP — v2.0</div>
+          <h1 style={{ fontSize: 32, fontWeight: 800, background: 'linear-gradient(135deg, #e2e8f0 0%, #818cf8 50%, #f472b6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1.2 }}>
+            RESET PASSWORD
+          </h1>
+          <p style={{ marginTop: 12, color: '#475569', fontSize: 14 }}>Enter your new password below.</p>
+        </div>
+
+        <div style={{ background: '#0c0d17', border: '1px solid #1e2030', borderRadius: 16, padding: 32 }}>
+          {!success ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>NEW PASSWORD</label>
+                <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleResetPassword()}
+                  placeholder="Min. 6 characters"
+                  style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>CONFIRM PASSWORD</label>
+                <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleResetPassword()}
+                  placeholder="Re-enter your password"
+                  style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+              </div>
+
+              {error && <div style={{ fontSize: 13, color: '#f87171', background: '#f8717115', border: '1px solid #f8717130', borderRadius: 8, padding: '10px 14px' }}>{error}</div>}
+
+              <button onClick={handleResetPassword} disabled={loading}
+                style={{ width: '100%', padding: '12px 0', borderRadius: 8, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg, #818cf8, #f472b6)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'Inter, sans-serif', opacity: loading ? 0.7 : 1, marginTop: 4 }}>
+                {loading ? 'Resetting...' : 'Reset Password →'}
+              </button>
+
+              <a href="/" style={{ textAlign: 'center', color: '#818cf8', textDecoration: 'none', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                Back to Login
+              </a>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#34d399', marginBottom: 8 }}>Password Reset Successful!</div>
+              <div style={{ fontSize: 13, color: '#475569', marginBottom: 16 }}>Redirecting you to login...</div>
+            </div>
+          )}
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: '#1e2030' }}>
+          Your progress is saved to your account across all devices.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Roadmap ────────────────────────────────────────────────────────────
 
 export default function Roadmap() {
@@ -711,13 +806,17 @@ export default function Roadmap() {
     setLastActive(null);
   };
 
-  // ── Render guards ──
   if (authLoading) {
     return (
       <div style={{ fontFamily: 'Inter, sans-serif', background: '#07080f', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ fontSize: 14, color: '#475569' }}>Loading...</div>
       </div>
     );
+  }
+
+  // Check if user is on reset password page
+  if (window.location.pathname === '/auth/reset-password') {
+    return <ResetPasswordScreen />;
   }
 
   if (!user) return <AuthScreen onAuth={() => {}} />;
