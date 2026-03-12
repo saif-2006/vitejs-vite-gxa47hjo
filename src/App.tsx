@@ -815,7 +815,7 @@ export default function Roadmap() {
   }
 
   // Check if user is on reset password page (using hash routing)
-  if (window.location.hash === '#/auth/reset-password') {
+ if (window.location.hash.includes('type=recovery')) {
     return <ResetPasswordScreen />;
   }
 
