@@ -2,11 +2,8 @@ import { useState } from 'react';
 
 const stages = [
   {
-    number: '00',
-    title: 'Mindset & Environment Setup',
-    color: '#818cf8',
-    duration: '3–5 days',
-    tag: 'FOUNDATION',
+    number: '00', title: 'Mindset & Environment Setup', color: '#818cf8',
+    duration: '3–5 days', tag: 'FOUNDATION',
     why: 'Most people skip this and waste months with bad habits. This stage costs 5 days and saves 5 months.',
     topics: [
       'How to use AI tools (Claude, ChatGPT) for learning — debug and understand, never blindly copy',
@@ -21,11 +18,8 @@ const stages = [
     goal: 'Your environment is ready and your mental model is correct before you write a single line.',
   },
   {
-    number: '01',
-    title: 'Python Fundamentals — Core',
-    color: '#60a5fa',
-    duration: '3–4 weeks',
-    tag: 'LANGUAGE',
+    number: '01', title: 'Python Fundamentals — Core', color: '#60a5fa',
+    duration: '3–4 weeks', tag: 'LANGUAGE',
     why: 'Real automation is 80% Python basics done very well. You need to write scripts without constantly googling syntax.',
     topics: [
       'Variables, strings (f-strings), numbers (int, float), booleans',
@@ -52,11 +46,8 @@ const stages = [
     goal: 'You write scripts from scratch without looking up basic syntax. Errors are handled gracefully.',
   },
   {
-    number: '02',
-    title: 'Professional Development Tools',
-    color: '#38bdf8',
-    duration: '1 week',
-    tag: 'TOOLS',
+    number: '02', title: 'Professional Development Tools', color: '#38bdf8',
+    duration: '1 week', tag: 'TOOLS',
     why: "Without this, your projects can't be shared, secured, or maintained. Clients judge your GitHub before they judge your code.",
     topics: [
       'pip: installing, upgrading, uninstalling packages',
@@ -77,11 +68,8 @@ const stages = [
     goal: 'Every project from here is version-controlled, shareable, and secure from day one.',
   },
   {
-    number: '03',
-    title: 'HTTP, APIs & Authentication',
-    color: '#22d3ee',
-    duration: '2 weeks',
-    tag: 'APIs',
+    number: '03', title: 'HTTP, APIs & Authentication', color: '#22d3ee',
+    duration: '2 weeks', tag: 'APIs',
     why: '90% of automation is API communication. Understanding this deeply — not just copy-pasting — separates you from every tutorial follower.',
     topics: [
       'HTTP fundamentals: requests, responses, status codes (200, 201, 400, 401, 403, 429, 500)',
@@ -108,11 +96,8 @@ const stages = [
     goal: 'You connect to any API, authenticate properly, handle all errors, and process responses reliably.',
   },
   {
-    number: '04',
-    title: 'Data Handling & Processing',
-    color: '#34d399',
-    duration: '2 weeks',
-    tag: 'DATA',
+    number: '04', title: 'Data Handling & Processing', color: '#34d399',
+    duration: '2 weeks', tag: 'DATA',
     why: 'All automation moves data between systems. You need to clean it, transform it, and output it without losing anything.',
     topics: [
       'CSV: reading, writing, encoding issues, quoting edge cases',
@@ -138,11 +123,8 @@ const stages = [
     goal: 'You take data from any source, clean it, transform it, and output it anywhere.',
   },
   {
-    number: '05',
-    title: 'Async Programming & Performance',
-    color: '#a3e635',
-    duration: '1 week',
-    tag: 'PERFORMANCE',
+    number: '05', title: 'Async Programming & Performance', color: '#a3e635',
+    duration: '1 week', tag: 'PERFORMANCE',
     why: 'A script hitting 50 APIs sequentially is 50x slower than one hitting them concurrently. Production automation must be fast.',
     topics: [
       'Why synchronous code fails at scale: the blocking request problem',
@@ -163,11 +145,8 @@ const stages = [
     goal: 'Your scripts run fast. Hundreds of API calls complete in seconds, not minutes.',
   },
   {
-    number: '06',
-    title: 'Scheduling, Deployment & Monitoring',
-    color: '#fbbf24',
-    duration: '2 weeks',
-    tag: 'DEPLOYMENT',
+    number: '06', title: 'Scheduling, Deployment & Monitoring', color: '#fbbf24',
+    duration: '2 weeks', tag: 'DEPLOYMENT',
     why: 'A script that only runs when you click it is not automation. This stage makes your work truly autonomous — and worth real money.',
     topics: [
       'Cron jobs on Linux/Mac: syntax, scheduling expressions, crontab -e',
@@ -190,11 +169,8 @@ const stages = [
     goal: 'Automations run 24/7 without you. You know immediately when something breaks.',
   },
   {
-    number: '07',
-    title: 'Web Scraping & Browser Automation',
-    color: '#fb923c',
-    duration: '2 weeks',
-    tag: 'WEB',
+    number: '07', title: 'Web Scraping & Browser Automation', color: '#fb923c',
+    duration: '2 weeks', tag: 'WEB',
     why: 'Many valuable business processes involve websites with no API. Automating these is highly paid and very commonly needed.',
     topics: [
       'BeautifulSoup: parsing HTML, finding by tag/class/id/attribute, navigating the DOM',
@@ -221,11 +197,8 @@ const stages = [
     goal: 'You automate any website interaction a human could do manually.',
   },
   {
-    number: '08',
-    title: 'AI Integration — Deep',
-    color: '#f472b6',
-    duration: '3 weeks',
-    tag: 'AI CORE',
+    number: '08', title: 'AI Integration — Deep', color: '#f472b6',
+    duration: '3 weeks', tag: 'AI CORE',
     why: 'Calling the API takes 30 minutes. Getting reliable, structured, business-quality AI outputs is a real engineering skill most people skip entirely.',
     topics: [
       'OpenAI API: chat completions, GPT-4o, parameters (model, messages, max_tokens)',
@@ -254,11 +227,8 @@ const stages = [
     goal: 'You build AI features that produce reliable structured outputs for business use — not just impressive demos.',
   },
   {
-    number: '09',
-    title: 'Business Integrations — The Real Money APIs',
-    color: '#c084fc',
-    duration: '2 weeks',
-    tag: 'INTEGRATIONS',
+    number: '09', title: 'Business Integrations — The Real Money APIs', color: '#c084fc',
+    duration: '2 weeks', tag: 'INTEGRATIONS',
     why: "Clients don't pay you to call a weather API. They pay to automate Gmail, Sheets, Slack, and their CRM. These are the APIs that generate recurring income.",
     topics: [
       'Gmail API: read, send, search, label, archive, create drafts',
@@ -283,11 +253,8 @@ const stages = [
     goal: 'You automate the tools businesses actually use every day. This is where freelance projects live.',
   },
   {
-    number: '10',
-    title: 'Databases & State Management',
-    color: '#818cf8',
-    duration: '1 week',
-    tag: 'STORAGE',
+    number: '10', title: 'Databases & State Management', color: '#818cf8',
+    duration: '1 week', tag: 'STORAGE',
     why: 'Scripts that only store data in CSV files are fragile and unprofessional. Real systems need queryable, reliable, persistent storage.',
     topics: [
       'SQLite: when to use it, creating tables, Python sqlite3 module',
@@ -306,11 +273,8 @@ const stages = [
     goal: 'Automations remember state, avoid reprocessing, and store results reliably.',
   },
   {
-    number: '11',
-    title: 'Workflow Automation Platforms',
-    color: '#a78bfa',
-    duration: '1 week',
-    tag: 'NO-CODE+',
+    number: '11', title: 'Workflow Automation Platforms', color: '#a78bfa',
+    duration: '1 week', tag: 'NO-CODE+',
     why: 'Some clients want Python. Some want no-code. Many want hybrid. Being fluent in both doubles the clients you can serve.',
     topics: [
       'n8n: open-source, self-hostable, most powerful — learn this one deeply',
@@ -329,11 +293,8 @@ const stages = [
     goal: 'You serve technical and non-technical clients and recommend the right tool for each situation.',
   },
   {
-    number: '12',
-    title: 'Building Complete Automation Systems',
-    color: '#7c3aed',
-    duration: '4–6 weeks',
-    tag: 'SYSTEMS',
+    number: '12', title: 'Building Complete Automation Systems', color: '#7c3aed',
+    duration: '4–6 weeks', tag: 'SYSTEMS',
     why: 'This is where everything combines. You stop writing scripts and start building systems clients pay thousands for.',
     topics: [
       'System design before code: flowcharts, defining triggers, inputs, outputs, and failure states',
@@ -354,11 +315,8 @@ const stages = [
     goal: 'You have 3–5 complete, documented, deployable systems that solve recognizable business problems.',
   },
   {
-    number: '13',
-    title: 'Portfolio & Positioning',
-    color: '#2563eb',
-    duration: '2 weeks',
-    tag: 'PORTFOLIO',
+    number: '13', title: 'Portfolio & Positioning', color: '#2563eb',
+    duration: '2 weeks', tag: 'PORTFOLIO',
     why: 'A weak portfolio loses clients before the conversation starts. Most developers have terrible portfolios. This is your biggest competitive edge.',
     topics: [
       'GitHub profile: pinned repos, profile README.md, consistent commit history',
@@ -377,11 +335,8 @@ const stages = [
     goal: 'A potential client visiting your GitHub or LinkedIn immediately understands what you do and why to hire you.',
   },
   {
-    number: '14',
-    title: 'Freelancing — Getting & Keeping Clients',
-    color: '#0369a1',
-    duration: 'Ongoing',
-    tag: 'BUSINESS',
+    number: '14', title: 'Freelancing — Getting & Keeping Clients', color: '#0369a1',
+    duration: 'Ongoing', tag: 'BUSINESS',
     why: 'Technical skill without business skill earns nothing. This stage is as important as all the others combined.',
     topics: [
       'Upwork: niche positioning, proposal format (problem → solution → proof → price), first contracts',
@@ -407,365 +362,111 @@ const stages = [
 ];
 
 export default function Roadmap() {
-  const [open, setOpen] = useState(null);
+  const [open, setOpen] = useState<string | null>(null);
   const [filter, setFilter] = useState('ALL');
 
-  const tags = [
-    'ALL',
-    'FOUNDATION',
-    'LANGUAGE',
-    'TOOLS',
-    'APIs',
-    'DATA',
-    'PERFORMANCE',
-    'DEPLOYMENT',
-    'WEB',
-    'AI CORE',
-    'INTEGRATIONS',
-    'STORAGE',
-    'NO-CODE+',
-    'SYSTEMS',
-    'PORTFOLIO',
-    'BUSINESS',
-  ];
-
-  const filtered =
-    filter === 'ALL' ? stages : stages.filter((s) => s.tag === filter);
-
-  const tagColors = {
-    FOUNDATION: '#818cf8',
-    LANGUAGE: '#60a5fa',
-    TOOLS: '#38bdf8',
-    APIs: '#22d3ee',
-    DATA: '#34d399',
-    PERFORMANCE: '#a3e635',
-    DEPLOYMENT: '#fbbf24',
-    WEB: '#fb923c',
-    'AI CORE': '#f472b6',
-    INTEGRATIONS: '#c084fc',
-    STORAGE: '#818cf8',
-    'NO-CODE+': '#a78bfa',
-    SYSTEMS: '#7c3aed',
-    PORTFOLIO: '#2563eb',
-    BUSINESS: '#0369a1',
+  const tags = ['ALL','FOUNDATION','LANGUAGE','TOOLS','APIs','DATA','PERFORMANCE','DEPLOYMENT','WEB','AI CORE','INTEGRATIONS','STORAGE','NO-CODE+','SYSTEMS','PORTFOLIO','BUSINESS'];
+  const filtered = filter === 'ALL' ? stages : stages.filter((s) => s.tag === filter);
+  const tagColors: Record<string, string> = {
+    FOUNDATION: '#818cf8', LANGUAGE: '#60a5fa', TOOLS: '#38bdf8',
+    APIs: '#22d3ee', DATA: '#34d399', PERFORMANCE: '#a3e635',
+    DEPLOYMENT: '#fbbf24', WEB: '#fb923c', 'AI CORE': '#f472b6',
+    INTEGRATIONS: '#c084fc', STORAGE: '#818cf8', 'NO-CODE+': '#a78bfa',
+    SYSTEMS: '#7c3aed', PORTFOLIO: '#2563eb', BUSINESS: '#0369a1',
   };
 
   return (
-    <div
-      style={{
-        fontFamily: "'DM Mono', monospace",
-        background: '#07080f',
-        minHeight: '100vh',
-        padding: '40px 20px',
-        color: '#e2e8f0',
-      }}
-    >
+    <div style={{ fontFamily: "'Inter', sans-serif", background: '#07080f', minHeight: '100vh', padding: '48px 24px', color: '#e2e8f0' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #0f1117; } ::-webkit-scrollbar-thumb { background: #2d2f3e; border-radius: 2px; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0f1117; }
+        ::-webkit-scrollbar-thumb { background: #2d2f3e; border-radius: 2px; }
         .stage-card { transition: all 0.2s ease; border: 1px solid #1e2030; }
         .stage-card:hover { border-color: #2d3050; transform: translateY(-1px); }
-        .filter-btn { transition: all 0.15s ease; cursor: pointer; border: none; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.08em; padding: 5px 10px; border-radius: 4px; }
+        .filter-btn { transition: all 0.15s ease; cursor: pointer; border: none; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; padding: 6px 12px; border-radius: 6px; }
         .filter-btn:hover { opacity: 0.85; }
         .expand-arrow { transition: transform 0.2s ease; display: inline-block; }
       `}</style>
 
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
-        <div
-          style={{
-            marginBottom: 48,
-            borderBottom: '1px solid #1e2030',
-            paddingBottom: 32,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 10,
-              color: '#2d3050',
-              letterSpacing: '0.18em',
-              marginBottom: 14,
-            }}
-          >
+      <div style={{ maxWidth: 960, margin: '0 auto' }}>
+
+        {/* Header */}
+        <div style={{ marginBottom: 52, borderBottom: '1px solid #1e2030', paddingBottom: 36 }}>
+          <div style={{ fontSize: 12, color: '#2d3050', letterSpacing: '0.15em', marginBottom: 16, fontWeight: 600 }}>
             AI AUTOMATION MASTERY ROADMAP — v2.0
           </div>
-          <h1
-            style={{
-              fontFamily: "'Syne', sans-serif",
-              fontSize: 'clamp(26px, 5vw, 50px)',
-              fontWeight: 800,
-              margin: 0,
-              lineHeight: 1.1,
-              background:
-                'linear-gradient(135deg, #e2e8f0 0%, #818cf8 50%, #f472b6 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            FROM ZERO TO
-            <br />
-            FREELANCE AI ENGINEER
+          <h1 style={{ fontFamily: "'Inter', sans-serif", fontSize: 'clamp(32px, 6vw, 58px)', fontWeight: 800, margin: 0, lineHeight: 1.1, background: 'linear-gradient(135deg, #e2e8f0 0%, #818cf8 50%, #f472b6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            FROM ZERO TO<br />FREELANCE AI ENGINEER
           </h1>
-          <p
-            style={{
-              marginTop: 16,
-              color: '#475569',
-              fontSize: 12,
-              lineHeight: 1.8,
-              maxWidth: 560,
-            }}
-          >
-            15 stages. Every skill, tool, and critical gap — including
-            deployment, async, OAuth 2.0, business integrations, and freelance
-            strategy that every other roadmap skips.
+          <p style={{ marginTop: 20, color: '#64748b', fontSize: 16, lineHeight: 1.8, maxWidth: 580, fontWeight: 400 }}>
+            15 stages. Every skill, tool, and critical gap — including deployment, async, OAuth 2.0, business integrations, and freelance strategy that every other roadmap skips.
           </p>
-          <div
-            style={{
-              display: 'flex',
-              gap: 28,
-              marginTop: 20,
-              flexWrap: 'wrap',
-            }}
-          >
-            {[
-              ['15', 'Stages'],
-              ['6–12mo', 'To Freelance'],
-              ['5', 'Portfolio Projects'],
-              ['∞', 'Income Potential'],
-            ].map(([num, label]) => (
+          <div style={{ display: 'flex', gap: 36, marginTop: 24, flexWrap: 'wrap' }}>
+            {[['15', 'Stages'], ['6–12mo', 'To Freelance'], ['5', 'Portfolio Projects'], ['∞', 'Income Potential']].map(([num, label]) => (
               <div key={label}>
-                <div
-                  style={{
-                    fontFamily: "'Syne', sans-serif",
-                    fontSize: 22,
-                    fontWeight: 800,
-                    color: '#818cf8',
-                  }}
-                >
-                  {num}
-                </div>
-                <div
-                  style={{
-                    fontSize: 9,
-                    color: '#2d3050',
-                    letterSpacing: '0.12em',
-                    marginTop: 2,
-                  }}
-                >
-                  {label}
-                </div>
+                <div style={{ fontSize: 26, fontWeight: 800, color: '#818cf8' }}>{num}</div>
+                <div style={{ fontSize: 12, color: '#374151', letterSpacing: '0.08em', marginTop: 2, fontWeight: 500 }}>{label}</div>
               </div>
             ))}
           </div>
         </div>
 
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 6,
-            marginBottom: 28,
-          }}
-        >
+        {/* Filters */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 32 }}>
           {tags.map((tag) => (
-            <button
-              key={tag}
-              className="filter-btn"
-              onClick={() => setFilter(tag)}
-              style={{
-                background:
-                  filter === tag ? tagColors[tag] || '#818cf8' : '#0f1117',
-                color: filter === tag ? '#07080f' : '#374151',
-                border: `1px solid ${
-                  filter === tag ? tagColors[tag] || '#818cf8' : '#1a1d2e'
-                }`,
-              }}
-            >
+            <button key={tag} className="filter-btn" onClick={() => setFilter(tag)}
+              style={{ background: filter === tag ? tagColors[tag] || '#818cf8' : '#0f1117', color: filter === tag ? '#07080f' : '#4b5563', border: `1px solid ${filter === tag ? tagColors[tag] || '#818cf8' : '#1a1d2e'}` }}>
               {tag}
             </button>
           ))}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* Stages */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {filtered.map((stage) => {
             const isOpen = open === stage.number;
             return (
-              <div
-                key={stage.number}
-                className="stage-card"
-                style={{
-                  background: '#0c0d17',
-                  borderRadius: 10,
-                  overflow: 'hidden',
-                }}
-              >
-                <div
-                  onClick={() => setOpen(isOpen ? null : stage.number)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 16,
-                    padding: '18px 20px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div
-                    style={{
-                      fontFamily: "'Syne', sans-serif",
-                      fontSize: 18,
-                      fontWeight: 800,
-                      color: stage.color,
-                      opacity: 0.6,
-                      minWidth: 32,
-                      lineHeight: 1,
-                    }}
-                  >
+              <div key={stage.number} className="stage-card" style={{ background: '#0c0d17', borderRadius: 12, overflow: 'hidden' }}>
+
+                <div onClick={() => setOpen(isOpen ? null : stage.number)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '20px 24px', cursor: 'pointer' }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: stage.color, opacity: 0.6, minWidth: 36, lineHeight: 1 }}>
                     {stage.number}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontFamily: "'Syne', sans-serif",
-                          fontSize: 14,
-                          fontWeight: 700,
-                          color: '#e2e8f0',
-                        }}
-                      >
-                        {stage.title}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 9,
-                          letterSpacing: '0.12em',
-                          padding: '2px 7px',
-                          borderRadius: 3,
-                          background: stage.color + '18',
-                          color: stage.color,
-                          border: `1px solid ${stage.color}35`,
-                        }}
-                      >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 17, fontWeight: 700, color: '#e2e8f0' }}>{stage.title}</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', padding: '3px 8px', borderRadius: 4, background: stage.color + '18', color: stage.color, border: `1px solid ${stage.color}35` }}>
                         {stage.tag}
                       </span>
                     </div>
-                    <div
-                      style={{ fontSize: 10, color: '#374151', marginTop: 3 }}
-                    >
-                      {stage.duration}
-                    </div>
+                    <div style={{ fontSize: 13, color: '#4b5563', marginTop: 4, fontWeight: 400 }}>{stage.duration}</div>
                   </div>
-                  <div
-                    style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-                  >
-                    <div
-                      style={{
-                        width: 5,
-                        height: 5,
-                        borderRadius: '50%',
-                        background: stage.color,
-                        opacity: 0.7,
-                      }}
-                    />
-                    <span
-                      className="expand-arrow"
-                      style={{
-                        color: '#374151',
-                        fontSize: 18,
-                        transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-                      }}
-                    >
-                      ›
-                    </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: stage.color, opacity: 0.7 }} />
+                    <span className="expand-arrow" style={{ color: '#4b5563', fontSize: 20, transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>›</span>
                   </div>
                 </div>
 
                 {isOpen && (
-                  <div
-                    style={{
-                      padding: '0 20px 24px',
-                      borderTop: `1px solid ${stage.color}18`,
-                    }}
-                  >
-                    <div
-                      style={{
-                        background: stage.color + '08',
-                        border: `1px solid ${stage.color}20`,
-                        borderLeft: `3px solid ${stage.color}`,
-                        borderRadius: 8,
-                        padding: '12px 16px',
-                        margin: '16px 0',
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: 9,
-                          color: stage.color,
-                          letterSpacing: '0.12em',
-                          marginBottom: 5,
-                        }}
-                      >
-                        WHY THIS STAGE MATTERS
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: '#94a3b8',
-                          lineHeight: 1.7,
-                        }}
-                      >
-                        {stage.why}
-                      </div>
+                  <div style={{ padding: '0 24px 28px', borderTop: `1px solid ${stage.color}18` }}>
+
+                    {/* Why */}
+                    <div style={{ background: stage.color + '08', border: `1px solid ${stage.color}20`, borderLeft: `3px solid ${stage.color}`, borderRadius: 8, padding: '14px 18px', margin: '18px 0' }}>
+                      <div style={{ fontSize: 11, color: stage.color, letterSpacing: '0.12em', marginBottom: 6, fontWeight: 600 }}>WHY THIS STAGE MATTERS</div>
+                      <div style={{ fontSize: 15, color: '#94a3b8', lineHeight: 1.7 }}>{stage.why}</div>
                     </div>
 
+                    {/* Topics */}
                     {stage.topics.length > 0 && (
-                      <div style={{ marginBottom: 20 }}>
-                        <div
-                          style={{
-                            fontSize: 9,
-                            color: '#2d3050',
-                            letterSpacing: '0.12em',
-                            marginBottom: 10,
-                          }}
-                        >
-                          TOPICS TO MASTER
-                        </div>
-                        <div
-                          style={{
-                            display: 'grid',
-                            gridTemplateColumns:
-                              'repeat(auto-fill, minmax(300px, 1fr))',
-                            gap: 7,
-                          }}
-                        >
+                      <div style={{ marginBottom: 22 }}>
+                        <div style={{ fontSize: 11, color: '#374151', letterSpacing: '0.12em', marginBottom: 12, fontWeight: 600 }}>TOPICS TO MASTER</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 8 }}>
                           {stage.topics.map((t, idx) => (
-                            <div
-                              key={idx}
-                              style={{
-                                fontSize: 12,
-                                color: '#4b5563',
-                                lineHeight: 1.5,
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                              }}
-                            >
-                              <span
-                                style={{
-                                  color: stage.color,
-                                  marginRight: 8,
-                                  marginTop: 2,
-                                  flexShrink: 0,
-                                  opacity: 0.7,
-                                }}
-                              >
-                                →
-                              </span>
+                            <div key={idx} style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6, display: 'flex', alignItems: 'flex-start' }}>
+                              <span style={{ color: stage.color, marginRight: 10, marginTop: 3, flexShrink: 0, opacity: 0.7 }}>→</span>
                               <span>{t}</span>
                             </div>
                           ))}
@@ -773,46 +474,14 @@ export default function Roadmap() {
                       </div>
                     )}
 
+                    {/* Projects */}
                     {stage.projects.length > 0 && (
-                      <div style={{ marginBottom: 16 }}>
-                        <div
-                          style={{
-                            fontSize: 9,
-                            color: '#2d3050',
-                            letterSpacing: '0.12em',
-                            marginBottom: 10,
-                          }}
-                        >
-                          PRACTICE PROJECTS
-                        </div>
-                        <div
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 7,
-                          }}
-                        >
+                      <div style={{ marginBottom: 18 }}>
+                        <div style={{ fontSize: 11, color: '#374151', letterSpacing: '0.12em', marginBottom: 12, fontWeight: 600 }}>PRACTICE PROJECTS</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                           {stage.projects.map((p, idx) => (
-                            <div
-                              key={idx}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: 9,
-                                fontSize: 12,
-                                color: '#6b7280',
-                              }}
-                            >
-                              <span
-                                style={{
-                                  color: stage.color,
-                                  fontSize: 7,
-                                  marginTop: 4,
-                                  flexShrink: 0,
-                                }}
-                              >
-                                ◆
-                              </span>
+                            <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14, color: '#6b7280' }}>
+                              <span style={{ color: stage.color, fontSize: 8, marginTop: 5, flexShrink: 0 }}>◆</span>
                               <span>{p}</span>
                             </div>
                           ))}
@@ -820,40 +489,12 @@ export default function Roadmap() {
                       </div>
                     )}
 
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: 10,
-                        padding: '11px 14px',
-                        background: '#0f1117',
-                        borderRadius: 6,
-                        border: '1px solid #1a1d2e',
-                      }}
-                    >
-                      <span
-                        style={{
-                          color: stage.color,
-                          fontSize: 13,
-                          flexShrink: 0,
-                          marginTop: 1,
-                        }}
-                      >
-                        ✓
-                      </span>
+                    {/* Goal */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '13px 16px', background: '#0f1117', borderRadius: 8, border: '1px solid #1a1d2e' }}>
+                      <span style={{ color: stage.color, fontSize: 15, flexShrink: 0, marginTop: 1 }}>✓</span>
                       <div>
-                        <span
-                          style={{
-                            fontSize: 9,
-                            color: '#2d3050',
-                            letterSpacing: '0.1em',
-                          }}
-                        >
-                          STAGE GOAL —{' '}
-                        </span>
-                        <span style={{ fontSize: 12, color: '#6b7280' }}>
-                          {stage.goal}
-                        </span>
+                        <span style={{ fontSize: 11, color: '#374151', letterSpacing: '0.1em', fontWeight: 600 }}>STAGE GOAL — </span>
+                        <span style={{ fontSize: 14, color: '#6b7280' }}>{stage.goal}</span>
                       </div>
                     </div>
                   </div>
@@ -863,17 +504,8 @@ export default function Roadmap() {
           })}
         </div>
 
-        <div
-          style={{
-            marginTop: 40,
-            paddingTop: 20,
-            borderTop: '1px solid #1a1d2e',
-            textAlign: 'center',
-          }}
-        >
-          <div
-            style={{ fontSize: 10, color: '#1e2030', letterSpacing: '0.1em' }}
-          >
+        <div style={{ marginTop: 48, paddingTop: 24, borderTop: '1px solid #1a1d2e', textAlign: 'center' }}>
+          <div style={{ fontSize: 12, color: '#1e2030', letterSpacing: '0.1em', fontWeight: 500 }}>
             CLICK ANY STAGE TO EXPAND · FILTER BY TAG ABOVE · BUILD IN ORDER
           </div>
         </div>
