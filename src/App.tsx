@@ -421,7 +421,7 @@ function AuthScreen({ onAuth }: { onAuth: () => void }) {
     if (!forgotEmail) { setForgotError('Please enter your email.'); setForgotLoading(false); return; }
 
     const { error: e } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
+      redirectTo: `${window.location.origin}/#/auth/reset-password`,
     });
 
     if (e) { setForgotError(e.message); }
@@ -814,8 +814,8 @@ export default function Roadmap() {
     );
   }
 
-  // Check if user is on reset password page
-  if (window.location.pathname === '/auth/reset-password') {
+  // Check if user is on reset password page (using hash routing)
+  if (window.location.hash === '#/auth/reset-password') {
     return <ResetPasswordScreen />;
   }
 
