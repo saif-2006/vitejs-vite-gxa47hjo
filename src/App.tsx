@@ -1,4 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = 'https://bslpmtvczbzvcylphknq.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_Q6xqfEalwZSGmoAglgJ4GA_LlDGXt6T';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const STAGE_GROUPS = [
   { label: 'BEGINNER', subtitle: 'Foundation & Language', range: ['00', '01', '02'], color: '#60a5fa' },
@@ -379,20 +384,99 @@ const stages = [
 
 const TOTAL_WEEKS = stages.reduce((sum, s) => sum + s.weeks, 0);
 
-function loadState() {
-  try {
-    return {
-      completedTopics: JSON.parse(localStorage.getItem('completedTopics') || '{}'),
-      completedStages: JSON.parse(localStorage.getItem('completedStages') || '[]'),
-      currentStage: localStorage.getItem('currentStage') || null,
-      notes: JSON.parse(localStorage.getItem('notes') || '{}'),
-      lastActive: localStorage.getItem('lastActive') || null,
-      streak: parseInt(localStorage.getItem('streak') || '0'),
-    };
-  } catch { return { completedTopics: {}, completedStages: [], currentStage: null, notes: {}, lastActive: null, streak: 0 }; }
+// ─── Auth Screen ────────────────────────────────────────────────────────────
+
+function AuthScreen({ onAuth }: { onAuth: () => void }) {
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState('');
+
+  const handle = async () => {
+    setError(''); setSuccess(''); setLoading(true);
+    if (!email || !password) { setError('Please enter your email and password.'); setLoading(false); return; }
+    if (password.length < 6) { setError('Password must be at least 6 characters.'); setLoading(false); return; }
+
+    if (mode === 'signup') {
+      const { error: e } = await supabase.auth.signUp({ email, password });
+      if (e) { setError(e.message); }
+      else { setSuccess('Account created! Check your email to confirm, then log in.'); setMode('login'); }
+    } else {
+      const { error: e } = await supabase.auth.signInWithPassword({ email, password });
+      if (e) { setError(e.message); }
+      else { onAuth(); }
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ fontFamily: "'Inter', sans-serif", background: '#07080f', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
+      <div style={{ width: '100%', maxWidth: 420 }}>
+        {/* Logo / Title */}
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <div style={{ fontSize: 11, color: '#2d3050', letterSpacing: '0.18em', marginBottom: 14, fontWeight: 600 }}>AI AUTOMATION MASTERY ROADMAP — v2.0</div>
+          <h1 style={{ fontSize: 32, fontWeight: 800, background: 'linear-gradient(135deg, #e2e8f0 0%, #818cf8 50%, #f472b6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1.2 }}>
+            FROM ZERO TO<br />FREELANCE AI ENGINEER
+          </h1>
+          <p style={{ marginTop: 12, color: '#475569', fontSize: 14 }}>Track your progress. Own your journey.</p>
+        </div>
+
+        {/* Card */}
+        <div style={{ background: '#0c0d17', border: '1px solid #1e2030', borderRadius: 16, padding: 32 }}>
+          {/* Tab switcher */}
+          <div style={{ display: 'flex', background: '#07080f', borderRadius: 10, padding: 4, marginBottom: 28, border: '1px solid #1a1d2e' }}>
+            {(['login', 'signup'] as const).map(m => (
+              <button key={m} onClick={() => { setMode(m); setError(''); setSuccess(''); }}
+                style={{ flex: 1, padding: '8px 0', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'Inter, sans-serif', background: mode === m ? '#818cf8' : 'transparent', color: mode === m ? '#07080f' : '#475569', transition: 'all 0.15s' }}>
+                {m === 'login' ? 'Log In' : 'Sign Up'}
+              </button>
+            ))}
+          </div>
+
+          {/* Fields */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>EMAIL</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handle()}
+                placeholder="you@example.com"
+                style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>PASSWORD</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handle()}
+                placeholder="Min. 6 characters"
+                style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+            </div>
+
+            {error && <div style={{ fontSize: 13, color: '#f87171', background: '#f8717115', border: '1px solid #f8717130', borderRadius: 8, padding: '10px 14px' }}>{error}</div>}
+            {success && <div style={{ fontSize: 13, color: '#34d399', background: '#34d39915', border: '1px solid #34d39930', borderRadius: 8, padding: '10px 14px' }}>{success}</div>}
+
+            <button onClick={handle} disabled={loading}
+              style={{ width: '100%', padding: '12px 0', borderRadius: 8, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg, #818cf8, #f472b6)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'Inter, sans-serif', opacity: loading ? 0.7 : 1, marginTop: 4 }}>
+              {loading ? 'Please wait...' : mode === 'login' ? 'Log In →' : 'Create Account →'}
+            </button>
+          </div>
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: '#1e2030' }}>
+          Your progress is saved to your account across all devices.
+        </div>
+      </div>
+    </div>
+  );
 }
 
+// ─── Main Roadmap ────────────────────────────────────────────────────────────
+
 export default function Roadmap() {
+  const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
   const [open, setOpen] = useState<string | null>(null);
   const [filter, setFilter] = useState('ALL');
   const [completedTopics, setCompletedTopics] = useState<Record<string, boolean[]>>({});
@@ -403,33 +487,94 @@ export default function Roadmap() {
   const [streak, setStreak] = useState(0);
   const [celebration, setCelebration] = useState<string | null>(null);
   const [allExpanded, setAllExpanded] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null);
   const stageRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Auth listener
   useEffect(() => {
-    const s = loadState();
-    setCompletedTopics(s.completedTopics);
-    setCompletedStages(s.completedStages);
-    setCurrentStage(s.currentStage);
-    setNotes(s.notes);
-    setLastActive(s.lastActive);
-    setStreak(s.streak);
-
-    // Update streak
-    const today = new Date().toDateString();
-    const yesterday = new Date(Date.now() - 86400000).toDateString();
-    if (s.lastActive !== today) {
-      const newStreak = s.lastActive === yesterday ? s.streak + 1 : 1;
-      setStreak(newStreak);
-      setLastActive(today);
-      localStorage.setItem('streak', String(newStreak));
-      localStorage.setItem('lastActive', today);
-    }
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null);
+      setAuthLoading(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
-  const saveTopics = (t: Record<string, boolean[]>) => { setCompletedTopics(t); localStorage.setItem('completedTopics', JSON.stringify(t)); };
-  const saveStages = (s: string[]) => { setCompletedStages(s); localStorage.setItem('completedStages', JSON.stringify(s)); };
-  const saveNote = (num: string, val: string) => { const n = { ...notes, [num]: val }; setNotes(n); localStorage.setItem('notes', JSON.stringify(n)); };
-  const saveCurrent = (num: string | null) => { setCurrentStage(num); if (num) localStorage.setItem('currentStage', num); else localStorage.removeItem('currentStage'); };
+  // Load progress from Supabase when user logs in
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data, error } = await supabase
+        .from('progress')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { console.error(error); return; }
+
+      if (data) {
+        setCompletedTopics(data.completed_topics || {});
+        setCompletedStages(data.completed_stages || []);
+        setCurrentStage(data.current_stage || null);
+        setNotes(data.notes || {});
+        setStreak(data.streak || 0);
+        setLastActive(data.last_active || null);
+
+        // Update streak
+        const today = new Date().toDateString();
+        const yesterday = new Date(Date.now() - 86400000).toDateString();
+        if (data.last_active !== today) {
+          const newStreak = data.last_active === yesterday ? (data.streak || 0) + 1 : 1;
+          setStreak(newStreak);
+          setLastActive(today);
+        }
+      }
+    })();
+  }, [user]);
+
+  // Debounced save to Supabase
+  const saveToSupabase = (updates: object) => {
+    if (!user) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    setSaveStatus('saving');
+    saveTimer.current = setTimeout(async () => {
+      const today = new Date().toDateString();
+      const { error } = await supabase.from('progress').upsert({
+        user_id: user.id,
+        completed_topics: completedTopics,
+        completed_stages: completedStages,
+        current_stage: currentStage,
+        notes,
+        streak,
+        last_active: today,
+        updated_at: new Date().toISOString(),
+        ...updates,
+      }, { onConflict: 'user_id' });
+      setSaveStatus(error ? 'error' : 'saved');
+      setTimeout(() => setSaveStatus(null), 2000);
+    }, 800);
+  };
+
+  const saveTopics = (t: Record<string, boolean[]>) => {
+    setCompletedTopics(t);
+    saveToSupabase({ completed_topics: t });
+  };
+  const saveStages = (s: string[]) => {
+    setCompletedStages(s);
+    saveToSupabase({ completed_stages: s });
+  };
+  const saveNote = (num: string, val: string) => {
+    const n = { ...notes, [num]: val };
+    setNotes(n);
+    saveToSupabase({ notes: n });
+  };
+  const saveCurrent = (num: string | null) => {
+    setCurrentStage(num);
+    saveToSupabase({ current_stage: num });
+  };
 
   const toggleTopic = (stageNum: string, idx: number, totalTopics: number) => {
     const prev = completedTopics[stageNum] || Array(totalTopics).fill(false);
@@ -437,7 +582,6 @@ export default function Roadmap() {
     next[idx] = !next[idx];
     const updated = { ...completedTopics, [stageNum]: next };
     saveTopics(updated);
-    // Auto-complete stage if all topics done
     if (next.every(Boolean) && !completedStages.includes(stageNum)) {
       const newStages = [...completedStages, stageNum];
       saveStages(newStages);
@@ -456,7 +600,7 @@ export default function Roadmap() {
     }
   };
 
-  const stageProgress = (stageNum: string, total: number) => {
+  const stageProgress = (stageNum: string) => {
     const t = completedTopics[stageNum] || [];
     return t.filter(Boolean).length;
   };
@@ -464,7 +608,6 @@ export default function Roadmap() {
   const totalTopicsAll = stages.reduce((sum, s) => sum + s.topics.length, 0);
   const doneTopicsAll = stages.reduce((sum, s) => sum + (completedTopics[s.number] || []).filter(Boolean).length, 0);
   const overallPct = Math.round((doneTopicsAll / totalTopicsAll) * 100);
-
   const weeksCompleted = stages.filter(s => completedStages.includes(s.number)).reduce((sum, s) => sum + s.weeks, 0);
   const weeksLeft = Math.round(TOTAL_WEEKS - weeksCompleted);
 
@@ -497,6 +640,27 @@ export default function Roadmap() {
   };
 
   const isOpen = (num: string) => allExpanded || open === num;
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setCompletedTopics({});
+    setCompletedStages([]);
+    setCurrentStage(null);
+    setNotes({});
+    setStreak(0);
+    setLastActive(null);
+  };
+
+  // ── Render guards ──
+  if (authLoading) {
+    return (
+      <div style={{ fontFamily: 'Inter, sans-serif', background: '#07080f', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: 14, color: '#475569' }}>Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) return <AuthScreen onAuth={() => {}} />;
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", background: '#07080f', minHeight: '100vh', color: '#e2e8f0' }}>
@@ -540,6 +704,17 @@ export default function Roadmap() {
               → Current Stage
             </button>
           )}
+          {/* Save status */}
+          {saveStatus === 'saving' && <span style={{ fontSize: 11, color: '#475569' }}>Saving...</span>}
+          {saveStatus === 'saved' && <span style={{ fontSize: 11, color: '#34d399' }}>✓ Saved</span>}
+          {saveStatus === 'error' && <span style={{ fontSize: 11, color: '#f87171' }}>Save failed</span>}
+          {/* User + logout */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 4 }}>
+            <span style={{ fontSize: 11, color: '#374151', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</span>
+            <button onClick={handleLogout} style={{ background: 'transparent', border: '1px solid #1e2030', color: '#475569', fontSize: 11, padding: '3px 9px', borderRadius: 5, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+              Log out
+            </button>
+          </div>
         </div>
       </div>
 
@@ -608,7 +783,6 @@ export default function Roadmap() {
             const groupStages = stages.filter(s => group.range.includes(s.number));
             return (
               <div key={group.label} style={{ marginBottom: 36 }}>
-                {/* Group header */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
                   <div style={{ width: 3, height: 32, background: group.color, borderRadius: 99 }} />
                   <div>
@@ -643,8 +817,8 @@ export default function Roadmap() {
 
   function renderStage(stage: typeof stages[0]) {
     const status = getStageStatus(stage.number);
-    const topicsDone = stageProgress(stage.number, stage.topics.length);
-    const stagePct = Math.round((topicsDone / stage.topics.length) * 100);
+    const topicsDone = stageProgress(stage.number);
+    const stagePct = stage.topics.length > 0 ? Math.round((topicsDone / stage.topics.length) * 100) : 0;
     const stageOpen = isOpen(stage.number);
     const topicsState = completedTopics[stage.number] || Array(stage.topics.length).fill(false);
 
@@ -656,11 +830,9 @@ export default function Roadmap() {
         className="stage-card"
         style={{ background: bgColor, borderRadius: 12, overflow: 'hidden', border: `1px solid ${borderColor}` }}>
 
-        {/* Stage header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '18px 20px', cursor: 'pointer' }}
           onClick={() => { if (!allExpanded) setOpen(stageOpen && !allExpanded ? null : stage.number); }}>
 
-          {/* Stage number */}
           <div style={{ fontSize: 18, fontWeight: 800, color: stage.color, minWidth: 32, lineHeight: 1, opacity: status === 'done' ? 1 : 0.6 }}>
             {stage.number}
           </div>
@@ -694,14 +866,12 @@ export default function Roadmap() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {/* Mark as current */}
             {status !== 'done' && (
               <button onClick={e => { e.stopPropagation(); saveCurrent(currentStage === stage.number ? null : stage.number); }}
                 style={{ background: 'transparent', border: `1px solid ${currentStage === stage.number ? stage.color : '#2d3050'}`, color: currentStage === stage.number ? stage.color : '#374151', fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 4, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                 {currentStage === stage.number ? '★ Current' : '☆ Set Current'}
               </button>
             )}
-            {/* Stage complete toggle */}
             <div className="check-box" onClick={e => { e.stopPropagation(); toggleStage(stage.number); }}
               style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${status === 'done' ? '#34d399' : '#2d3050'}`, background: status === 'done' ? '#34d39920' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>
               {status === 'done' ? '✓' : ''}
@@ -710,24 +880,20 @@ export default function Roadmap() {
           </div>
         </div>
 
-        {/* Milestone */}
         {MILESTONES[stage.number] && (
           <div style={{ margin: '0 20px 14px', padding: '8px 14px', background: '#fbbf2410', border: '1px solid #fbbf2430', borderRadius: 8, fontSize: 13, color: '#fbbf24', fontWeight: 500 }}>
             {MILESTONES[stage.number]}
           </div>
         )}
 
-        {/* Expanded content */}
         {stageOpen && (
           <div style={{ padding: '0 20px 24px', borderTop: `1px solid ${stage.color}18` }}>
 
-            {/* Why */}
             <div style={{ background: stage.color + '08', border: `1px solid ${stage.color}20`, borderLeft: `3px solid ${stage.color}`, borderRadius: 8, padding: '13px 16px', margin: '16px 0' }}>
               <div style={{ fontSize: 11, color: stage.color, letterSpacing: '0.12em', marginBottom: 6, fontWeight: 600 }}>WHY THIS STAGE MATTERS</div>
               <div style={{ fontSize: 15, color: '#94a3b8', lineHeight: 1.7 }}>{stage.why}</div>
             </div>
 
-            {/* Topics */}
             {stage.topics.length > 0 && (
               <div style={{ marginBottom: 22 }}>
                 <div style={{ fontSize: 11, color: '#475569', letterSpacing: '0.12em', marginBottom: 12, fontWeight: 600 }}>TOPICS TO MASTER</div>
@@ -750,7 +916,6 @@ export default function Roadmap() {
               </div>
             )}
 
-            {/* Projects */}
             {stage.projects.length > 0 && (
               <div style={{ marginBottom: 18 }}>
                 <div style={{ fontSize: 11, color: '#475569', letterSpacing: '0.12em', marginBottom: 12, fontWeight: 600 }}>PRACTICE PROJECTS</div>
@@ -765,7 +930,6 @@ export default function Roadmap() {
               </div>
             )}
 
-            {/* Goal */}
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', background: '#0f1117', borderRadius: 8, border: '1px solid #1a1d2e', marginBottom: 16 }}>
               <span style={{ color: stage.color, fontSize: 14, flexShrink: 0 }}>✓</span>
               <div>
@@ -774,7 +938,6 @@ export default function Roadmap() {
               </div>
             </div>
 
-            {/* Notes */}
             <div>
               <div style={{ fontSize: 11, color: '#475569', letterSpacing: '0.12em', marginBottom: 8, fontWeight: 600 }}>MY NOTES & RESOURCES</div>
               <textarea
