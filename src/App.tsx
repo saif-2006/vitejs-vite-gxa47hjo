@@ -384,153 +384,6 @@ const stages = [
 
 const TOTAL_WEEKS = stages.reduce((sum, s) => sum + s.weeks, 0);
 
-// ─── Auth Screen ────────────────────────────────────────────────────────────
-
-function AuthScreen({ onAuth }: { onAuth: () => void }) {
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState('');
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotLoading, setForgotLoading] = useState(false);
-  const [forgotError, setForgotError] = useState('');
-  const [forgotSuccess, setForgotSuccess] = useState('');
-
-  const handle = async () => {
-    setError(''); setSuccess(''); setLoading(true);
-    if (!email || !password) { setError('Please enter your email and password.'); setLoading(false); return; }
-    if (password.length < 6) { setError('Password must be at least 6 characters.'); setLoading(false); return; }
-
-    if (mode === 'signup') {
-      const { error: e } = await supabase.auth.signUp({ email, password });
-      if (e) { setError(e.message); }
-      else { setSuccess('Account created! Check your email to confirm, then log in.'); setMode('login'); }
-    } else {
-      const { error: e } = await supabase.auth.signInWithPassword({ email, password });
-      if (e) { setError(e.message); }
-      else { onAuth(); }
-    }
-    setLoading(false);
-  };
-
-  const handleForgotPassword = async () => {
-    setForgotError(''); setForgotSuccess(''); setForgotLoading(true);
-    if (!forgotEmail) { setForgotError('Please enter your email.'); setForgotLoading(false); return; }
-
-    const { error: e } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/`,
-    });
-
-    if (e) { setForgotError(e.message); }
-    else { 
-      setForgotSuccess('Password reset email sent! Check your inbox.');
-      setTimeout(() => { setShowForgotPassword(false); setForgotEmail(''); }, 3000);
-    }
-    setForgotLoading(false);
-  };
-
-  return (
-    <div style={{ fontFamily: "'Inter', sans-serif", background: '#07080f', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
-      <div style={{ width: '100%', maxWidth: 420 }}>
-        {/* Logo / Title */}
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div style={{ fontSize: 11, color: '#2d3050', letterSpacing: '0.18em', marginBottom: 14, fontWeight: 600 }}>AI AUTOMATION MASTERY ROADMAP — v2.0</div>
-          <h1 style={{ fontSize: 32, fontWeight: 800, background: 'linear-gradient(135deg, #e2e8f0 0%, #818cf8 50%, #f472b6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1.2 }}>
-            FROM ZERO TO<br />FREELANCE AI ENGINEER
-          </h1>
-          <p style={{ marginTop: 12, color: '#475569', fontSize: 14 }}>Track your progress. Own your journey.</p>
-        </div>
-
-        {/* Card */}
-        <div style={{ background: '#0c0d17', border: '1px solid #1e2030', borderRadius: 16, padding: 32 }}>
-          {!showForgotPassword ? (
-            <>
-              {/* Tab switcher */}
-              <div style={{ display: 'flex', background: '#07080f', borderRadius: 10, padding: 4, marginBottom: 28, border: '1px solid #1a1d2e' }}>
-                {(['login', 'signup'] as const).map(m => (
-                  <button key={m} onClick={() => { setMode(m); setError(''); setSuccess(''); }}
-                    style={{ flex: 1, padding: '8px 0', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'Inter, sans-serif', background: mode === m ? '#818cf8' : 'transparent', color: mode === m ? '#07080f' : '#475569', transition: 'all 0.15s' }}>
-                    {m === 'login' ? 'Log In' : 'Sign Up'}
-                  </button>
-                ))}
-              </div>
-
-              {/* Fields */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>EMAIL</label>
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handle()}
-                    placeholder="you@example.com"
-                    style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
-                </div>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>PASSWORD</label>
-                  <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handle()}
-                    placeholder="Min. 6 characters"
-                    style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
-                </div>
-
-                {error && <div style={{ fontSize: 13, color: '#f87171', background: '#f8717115', border: '1px solid #f8717130', borderRadius: 8, padding: '10px 14px' }}>{error}</div>}
-                {success && <div style={{ fontSize: 13, color: '#34d399', background: '#34d39915', border: '1px solid #34d39930', borderRadius: 8, padding: '10px 14px' }}>{success}</div>}
-
-                <button onClick={handle} disabled={loading}
-                  style={{ width: '100%', padding: '12px 0', borderRadius: 8, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg, #818cf8, #f472b6)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'Inter, sans-serif', opacity: loading ? 0.7 : 1, marginTop: 4 }}>
-                  {loading ? 'Please wait...' : mode === 'login' ? 'Log In →' : 'Create Account →'}
-                </button>
-
-                {mode === 'login' && (
-                  <button onClick={() => setShowForgotPassword(true)} style={{ width: '100%', padding: '10px 0', borderRadius: 8, border: 'none', background: 'transparent', color: '#818cf8', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif', textDecoration: 'none', transition: 'all 0.15s' }} onMouseEnter={e => (e.currentTarget.style.color = '#f472b6')} onMouseLeave={e => (e.currentTarget.style.color = '#818cf8')}>
-                    Forgot Password?
-                  </button>
-                )}
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Forgot Password Form */}
-              <div style={{ marginBottom: 20 }}>
-                <button onClick={() => { setShowForgotPassword(false); setForgotError(''); setForgotSuccess(''); }} style={{ background: 'transparent', border: 'none', color: '#818cf8', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginBottom: 20 }}>
-                  ← Back to Login
-                </button>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', marginBottom: 8 }}>Reset Password</div>
-                <div style={{ fontSize: 13, color: '#475569' }}>Enter your email and we'll send you a password reset link.</div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>EMAIL</label>
-                  <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleForgotPassword()}
-                    placeholder="your@email.com"
-                    style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
-                </div>
-
-                {forgotError && <div style={{ fontSize: 13, color: '#f87171', background: '#f8717115', border: '1px solid #f8717130', borderRadius: 8, padding: '10px 14px' }}>{forgotError}</div>}
-                {forgotSuccess && <div style={{ fontSize: 13, color: '#34d399', background: '#34d39915', border: '1px solid #34d39930', borderRadius: 8, padding: '10px 14px' }}>{forgotSuccess}</div>}
-
-                <button onClick={handleForgotPassword} disabled={forgotLoading}
-                  style={{ width: '100%', padding: '12px 0', borderRadius: 8, border: 'none', cursor: forgotLoading ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg, #818cf8, #f472b6)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'Inter, sans-serif', opacity: forgotLoading ? 0.7 : 1, marginTop: 4 }}>
-                  {forgotLoading ? 'Sending...' : 'Send Reset Link →'}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-
-        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: '#1e2030' }}>
-          Your progress is saved to your account across all devices.
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Reset Password Screen ────────────────────────────────────────────────────
 
 function ResetPasswordScreen() {
@@ -539,22 +392,6 @@ function ResetPasswordScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [sessionReady, setSessionReady] = useState(false);
-
-  useEffect(() => {
-    const hash = window.location.hash;
-    const params = new URLSearchParams(hash.replace('#', ''));
-    const access_token = params.get('access_token');
-    const refresh_token = params.get('refresh_token');
-    if (access_token && refresh_token) {
-      supabase.auth.setSession({ access_token, refresh_token }).then(({ error: e }) => {
-        if (e) setError('Invalid or expired reset link. Please request a new one.');
-        else setSessionReady(true);
-      });
-    } else {
-      setError('Invalid reset link. Please request a new one.');
-    }
-  }, []);
 
   const handleResetPassword = async () => {
     setError('');
@@ -597,13 +434,7 @@ function ResetPasswordScreen() {
         </div>
 
         <div style={{ background: '#0c0d17', border: '1px solid #1e2030', borderRadius: 16, padding: 32 }}>
-          {!sessionReady && !error && (
-            <div style={{ textAlign: 'center', color: '#475569', fontSize: 14, padding: '20px 0' }}>Verifying reset link...</div>
-          )}
-          {error && !success && (
-            <div style={{ fontSize: 13, color: '#f87171', background: '#f8717115', border: '1px solid #f8717130', borderRadius: 8, padding: '10px 14px', marginBottom: 16 }}>{error}</div>
-          )}
-          {sessionReady && !success ? (
+          {!success ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>NEW PASSWORD</label>
@@ -648,6 +479,148 @@ function ResetPasswordScreen() {
   );
 }
 
+// ─── Auth Screen ────────────────────────────────────────────────────────────
+
+function AuthScreen({ onAuth }: { onAuth: () => void }) {
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState('');
+
+  const handle = async () => {
+    setError(''); setSuccess(''); setLoading(true);
+    if (!email || !password) { setError('Please enter your email and password.'); setLoading(false); return; }
+    if (password.length < 6) { setError('Password must be at least 6 characters.'); setLoading(false); return; }
+
+    if (mode === 'signup') {
+      const { error: e } = await supabase.auth.signUp({ email, password });
+      if (e) { setError(e.message); }
+      else { setSuccess('Account created! You can now log in.'); setMode('login'); setEmail(''); setPassword(''); }
+    } else {
+      const { error: e } = await supabase.auth.signInWithPassword({ email, password });
+      if (e) { setError(e.message); }
+      else { onAuth(); }
+    }
+    setLoading(false);
+  };
+
+  const handleForgotPassword = async () => {
+    setForgotError(''); setForgotSuccess(''); setForgotLoading(true);
+    if (!forgotEmail) { setForgotError('Please enter your email.'); setForgotLoading(false); return; }
+
+    const { error: e } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/#/auth/reset-password`,
+    });
+
+    if (e) { setForgotError(e.message); }
+    else { 
+      setForgotSuccess('Password reset email sent! Check your inbox.');
+      setTimeout(() => { setShowForgotPassword(false); setForgotEmail(''); }, 3000);
+    }
+    setForgotLoading(false);
+  };
+
+  return (
+    <div style={{ fontFamily: "'Inter', sans-serif", background: '#07080f', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
+      <div style={{ width: '100%', maxWidth: 420 }}>
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <div style={{ fontSize: 11, color: '#2d3050', letterSpacing: '0.18em', marginBottom: 14, fontWeight: 600 }}>AI AUTOMATION MASTERY ROADMAP — v2.0</div>
+          <h1 style={{ fontSize: 32, fontWeight: 800, background: 'linear-gradient(135deg, #e2e8f0 0%, #818cf8 50%, #f472b6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1.2 }}>
+            FROM ZERO TO<br />FREELANCE AI ENGINEER
+          </h1>
+          <p style={{ marginTop: 12, color: '#475569', fontSize: 14 }}>Track your progress. Own your journey.</p>
+        </div>
+
+        <div style={{ background: '#0c0d17', border: '1px solid #1e2030', borderRadius: 16, padding: 32 }}>
+          {!showForgotPassword ? (
+            <>
+              <div style={{ display: 'flex', background: '#07080f', borderRadius: 10, padding: 4, marginBottom: 28, border: '1px solid #1a1d2e' }}>
+                {(['login', 'signup'] as const).map(m => (
+                  <button key={m} onClick={() => { setMode(m); setError(''); setSuccess(''); }}
+                    style={{ flex: 1, padding: '8px 0', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'Inter, sans-serif', background: mode === m ? '#818cf8' : 'transparent', color: mode === m ? '#07080f' : '#475569', transition: 'all 0.15s' }}>
+                    {m === 'login' ? 'Log In' : 'Sign Up'}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>EMAIL</label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handle()}
+                    placeholder="you@example.com"
+                    style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>PASSWORD</label>
+                  <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handle()}
+                    placeholder="Min. 6 characters"
+                    style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                </div>
+
+                {error && <div style={{ fontSize: 13, color: '#f87171', background: '#f8717115', border: '1px solid #f8717130', borderRadius: 8, padding: '10px 14px' }}>{error}</div>}
+                {success && <div style={{ fontSize: 13, color: '#34d399', background: '#34d39915', border: '1px solid #34d39930', borderRadius: 8, padding: '10px 14px' }}>{success}</div>}
+
+                <button onClick={handle} disabled={loading}
+                  style={{ width: '100%', padding: '12px 0', borderRadius: 8, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg, #818cf8, #f472b6)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'Inter, sans-serif', opacity: loading ? 0.7 : 1, marginTop: 4 }}>
+                  {loading ? 'Please wait...' : mode === 'login' ? 'Log In →' : 'Create Account →'}
+                </button>
+
+                {mode === 'login' && (
+                  <button onClick={() => setShowForgotPassword(true)} style={{ width: '100%', padding: '10px 0', borderRadius: 8, border: 'none', background: 'transparent', color: '#818cf8', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif', textDecoration: 'none', transition: 'all 0.15s' }} onMouseEnter={e => (e.currentTarget.style.color = '#f472b6')} onMouseLeave={e => (e.currentTarget.style.color = '#818cf8')}>
+                    Forgot Password?
+                  </button>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ marginBottom: 20 }}>
+                <button onClick={() => { setShowForgotPassword(false); setForgotError(''); setForgotSuccess(''); }} style={{ background: 'transparent', border: 'none', color: '#818cf8', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginBottom: 20 }}>
+                  ← Back to Login
+                </button>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', marginBottom: 8 }}>Reset Password</div>
+                <div style={{ fontSize: 13, color: '#475569' }}>Enter your email and we'll send you a password reset link.</div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>EMAIL</label>
+                  <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleForgotPassword()}
+                    placeholder="your@email.com"
+                    style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                </div>
+
+                {forgotError && <div style={{ fontSize: 13, color: '#f87171', background: '#f8717115', border: '1px solid #f8717130', borderRadius: 8, padding: '10px 14px' }}>{forgotError}</div>}
+                {forgotSuccess && <div style={{ fontSize: 13, color: '#34d399', background: '#34d39915', border: '1px solid #34d39930', borderRadius: 8, padding: '10px 14px' }}>{forgotSuccess}</div>}
+
+                <button onClick={handleForgotPassword} disabled={forgotLoading}
+                  style={{ width: '100%', padding: '12px 0', borderRadius: 8, border: 'none', cursor: forgotLoading ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg, #818cf8, #f472b6)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'Inter, sans-serif', opacity: forgotLoading ? 0.7 : 1, marginTop: 4 }}>
+                  {forgotLoading ? 'Sending...' : 'Send Reset Link →'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: '#1e2030' }}>
+          Your progress is saved to your account across all devices.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Roadmap ────────────────────────────────────────────────────────────
 
 export default function Roadmap() {
@@ -668,7 +641,6 @@ export default function Roadmap() {
   const stageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Auth listener
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setUser(data.session?.user ?? null);
@@ -680,7 +652,6 @@ export default function Roadmap() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Load progress from Supabase when user logs in
   useEffect(() => {
     if (!user) return;
     (async () => {
@@ -700,7 +671,6 @@ export default function Roadmap() {
         setStreak(data.streak || 0);
         setLastActive(data.last_active || null);
 
-        // Update streak
         const today = new Date().toDateString();
         const yesterday = new Date(Date.now() - 86400000).toDateString();
         if (data.last_active !== today) {
@@ -712,7 +682,6 @@ export default function Roadmap() {
     })();
   }, [user]);
 
-  // Debounced save to Supabase
   const saveToSupabase = (updates: object) => {
     if (!user) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -836,8 +805,8 @@ export default function Roadmap() {
     );
   }
 
-  // Check if user is on reset password page (using hash routing)
- if (window.location.hash.includes('type=recovery')) {
+  // Check if on reset password page
+  if (window.location.hash.includes('type=recovery')) {
     return <ResetPasswordScreen />;
   }
 
@@ -846,15 +815,6 @@ export default function Roadmap() {
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", background: '#07080f', minHeight: '100vh', color: '#e2e8f0' }}>
       <style>{`
-<<<<<<< HEAD
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #0f1117; } ::-webkit-scrollbar-thumb { background: #2d2f3e; border-radius: 2px; }
-        .stage-card { transition: all 0.2s ease; border: 1px solid #1e2030; }
-        .stage-card:hover { border-color: #2d3050; transform: translateY(-1px); }
-        .filter-btn { transition: all 0.15s ease; cursor: pointer; border: none; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.08em; padding: 5px 10px; border-radius: 4px; }
-        .filter-btn:hover { opacity: 0.85; }
-=======
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px; }
@@ -868,7 +828,6 @@ export default function Roadmap() {
         .check-box:hover { transform: scale(1.1); }
         textarea { resize: vertical; font-family: 'Inter', sans-serif; }
         textarea:focus { outline: none; }
->>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
         .expand-arrow { transition: transform 0.2s ease; display: inline-block; }
         @keyframes celebIn { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
@@ -882,31 +841,10 @@ export default function Roadmap() {
         }
       `}</style>
 
-<<<<<<< HEAD
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
-        <div
-          style={{
-            marginBottom: 48,
-            borderBottom: '1px solid #1e2030',
-            paddingBottom: 32,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 13,
-              color: '#2d3050',
-              letterSpacing: '0.18em',
-              marginBottom: 14,
-            }}
-          >
-            AI AUTOMATION MASTERY ROADMAP — v2.0
-=======
-      {/* Sticky progress bar */}
       <div style={{ position: 'sticky', top: 0, zIndex: 100, background: '#07080f', borderBottom: '1px solid #1a1d2e', padding: '10px 24px' }}>
         <div style={{ maxWidth: 960, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ flex: 1, height: 6, background: '#1a1d2e', borderRadius: 99, overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${overallPct}%`, background: 'linear-gradient(90deg, #818cf8, #f472b6)', borderRadius: 99, transition: 'width 0.4s ease' }} />
->>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
           </div>
           <span style={{ fontSize: 13, fontWeight: 700, color: '#818cf8', minWidth: 42 }}>{overallPct}%</span>
           <span style={{ fontSize: 12, color: '#374151', whiteSpace: 'nowrap' }}>{completedStages.length}/15 stages</span>
@@ -915,11 +853,9 @@ export default function Roadmap() {
               → Current Stage
             </button>
           )}
-          {/* Save status */}
           {saveStatus === 'saving' && <span style={{ fontSize: 11, color: '#475569' }}>Saving...</span>}
           {saveStatus === 'saved' && <span style={{ fontSize: 11, color: '#34d399' }}>✓ Saved</span>}
           {saveStatus === 'error' && <span style={{ fontSize: 11, color: '#f87171' }}>Save failed</span>}
-          {/* User + logout */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 4 }}>
             <span style={{ fontSize: 11, color: '#374151', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</span>
             <button onClick={handleLogout} style={{ background: 'transparent', border: '1px solid #1e2030', color: '#475569', fontSize: 11, padding: '3px 9px', borderRadius: 5, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
@@ -929,7 +865,6 @@ export default function Roadmap() {
         </div>
       </div>
 
-      {/* Celebration toast */}
       {celebration && (
         <div className="celeb" style={{ position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)', zIndex: 999, background: '#0c0d17', border: '1px solid #818cf8', borderRadius: 12, padding: '16px 24px', textAlign: 'center', maxWidth: 340, boxShadow: '0 0 40px #818cf840' }}>
           <div style={{ fontSize: 28, marginBottom: 6 }}>🎉</div>
@@ -940,59 +875,20 @@ export default function Roadmap() {
 
       <div style={{ maxWidth: 960, margin: '0 auto', padding: '40px 20px' }}>
 
-        {/* Header */}
         <div style={{ marginBottom: 40, borderBottom: '1px solid #1e2030', paddingBottom: 32 }}>
           <div style={{ fontSize: 11, color: '#2d3050', letterSpacing: '0.18em', marginBottom: 14, fontWeight: 600 }}>AI AUTOMATION MASTERY ROADMAP — v2.0</div>
           <h1 style={{ fontSize: 'clamp(30px, 6vw, 54px)', fontWeight: 800, lineHeight: 1.1, background: 'linear-gradient(135deg, #e2e8f0 0%, #818cf8 50%, #f472b6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             FROM ZERO TO<br />FREELANCE AI ENGINEER
           </h1>
-<<<<<<< HEAD
-          <p
-            style={{
-              marginTop: 16,
-              color: '#475569',
-              fontSize: 15,
-              lineHeight: 1.8,
-              maxWidth: 560,
-            }}
-          >
-            15 stages. Every skill, tool, and critical gap — including
-            deployment, async, OAuth 2.0, business integrations, and freelance
-            strategy that every other roadmap skips.
-=======
           <p style={{ marginTop: 16, color: '#64748b', fontSize: 15, lineHeight: 1.8, maxWidth: 580 }}>
             15 stages. Every skill, tool, and critical gap — track your progress and become a freelance AI automation engineer.
->>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
           </p>
 
           <div className="header-stats" style={{ display: 'flex', gap: 28, marginTop: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
             {[['15', 'Total Stages'], [`${weeksLeft}w`, 'Weeks Left'], [`${streak}🔥`, 'Day Streak'], [completedStages.length > 0 ? `${completedStages.length}` : '0', 'Completed']].map(([num, label]) => (
               <div key={label}>
-<<<<<<< HEAD
-                <div
-                  style={{
-                    fontFamily: "'Syne', sans-serif",
-                    fontSize: 22,
-                    fontWeight: 800,
-                    color: '#818cf8',
-                  }}
-                >
-                  {num}
-                </div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: '#2d3050',
-                    letterSpacing: '0.12em',
-                    marginTop: 2,
-                  }}
-                >
-                  {label}
-                </div>
-=======
                 <div style={{ fontSize: 24, fontWeight: 800, color: '#818cf8' }}>{num}</div>
                 <div style={{ fontSize: 12, color: '#374151', marginTop: 2, fontWeight: 500 }}>{label}</div>
->>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
               </div>
             ))}
             {lastActive && (
@@ -1004,7 +900,6 @@ export default function Roadmap() {
           </div>
         </div>
 
-        {/* Controls */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
           <button onClick={toggleExpandAll} style={{ background: '#0f1117', border: '1px solid #1a1d2e', color: '#94a3b8', fontSize: 12, fontWeight: 600, padding: '6px 14px', borderRadius: 6, cursor: 'pointer' }}>
             {allExpanded ? '↑ Collapse All' : '↓ Expand All'}
@@ -1016,7 +911,6 @@ export default function Roadmap() {
           )}
         </div>
 
-        {/* Filters */}
         <div className="filter-bar" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 28 }}>
           {tags.map(tag => (
             <button key={tag} className="filter-btn" onClick={() => setFilter(tag)}
@@ -1026,7 +920,6 @@ export default function Roadmap() {
           ))}
         </div>
 
-        {/* Stage groups */}
         {filter === 'ALL' ? (
           STAGE_GROUPS.map(group => {
             const groupStages = stages.filter(s => group.range.includes(s.number));
@@ -1038,50 +931,9 @@ export default function Roadmap() {
                     <div style={{ fontSize: 11, fontWeight: 700, color: group.color, letterSpacing: '0.14em' }}>{group.label}</div>
                     <div style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>{group.subtitle}</div>
                   </div>
-<<<<<<< HEAD
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontFamily: "'Syne', sans-serif",
-                          fontSize: 14,
-                          fontWeight: 700,
-                          color: '#e2e8f0',
-                        }}
-                      >
-                        {stage.title}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 12,
-                          letterSpacing: '0.12em',
-                          padding: '2px 7px',
-                          borderRadius: 3,
-                          background: stage.color + '18',
-                          color: stage.color,
-                          border: `1px solid ${stage.color}35`,
-                        }}
-                      >
-                        {stage.tag}
-                      </span>
-                    </div>
-                    <div
-                      style={{ fontSize: 13, color: '#374151', marginTop: 3 }}
-                    >
-                      {stage.duration}
-                    </div>
-=======
                   <div style={{ flex: 1, height: 1, background: '#1a1d2e', marginLeft: 8 }} />
                   <div style={{ fontSize: 12, color: '#2d3050', fontWeight: 500 }}>
                     {groupStages.filter(s => completedStages.includes(s.number)).length}/{groupStages.length}
->>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1096,45 +948,6 @@ export default function Roadmap() {
           </div>
         )}
 
-<<<<<<< HEAD
-                {isOpen && (
-                  <div
-                    style={{
-                      padding: '0 20px 24px',
-                      borderTop: `1px solid ${stage.color}18`,
-                    }}
-                  >
-                    <div
-                      style={{
-                        background: stage.color + '08',
-                        border: `1px solid ${stage.color}20`,
-                        borderLeft: `3px solid ${stage.color}`,
-                        borderRadius: 8,
-                        padding: '12px 16px',
-                        margin: '16px 0',
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: stage.color,
-                          letterSpacing: '0.12em',
-                          marginBottom: 5,
-                        }}
-                      >
-                        WHY THIS STAGE MATTERS
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 15,
-                          color: '#94a3b8',
-                          lineHeight: 1.7,
-                        }}
-                      >
-                        {stage.why}
-                      </div>
-                    </div>
-=======
         <div style={{ marginTop: 40, paddingTop: 20, borderTop: '1px solid #1a1d2e', textAlign: 'center' }}>
           <div style={{ fontSize: 12, color: '#1e2030', letterSpacing: '0.1em', fontWeight: 500 }}>
             CLICK ANY STAGE TO EXPAND · CHECK OFF TOPICS AS YOU LEARN · BUILD IN ORDER
@@ -1143,154 +956,17 @@ export default function Roadmap() {
       </div>
     </div>
   );
->>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
 
-<<<<<<< HEAD
-                    {stage.topics.length > 0 && (
-                      <div style={{ marginBottom: 20 }}>
-                        <div
-                          style={{
-                            fontSize: 12,
-                            color: '#2d3050',
-                            letterSpacing: '0.12em',
-                            marginBottom: 10,
-                          }}
-                        >
-                          TOPICS TO MASTER
-                        </div>
-                        <div
-                          style={{
-                            display: 'grid',
-                            gridTemplateColumns:
-                              'repeat(auto-fill, minmax(300px, 1fr))',
-                            gap: 7,
-                          }}
-                        >
-                          {stage.topics.map((t, idx) => (
-                            <div
-                              key={idx}
-                              style={{
-                                fontSize: 15,
-                                color: '#4b5563',
-                                lineHeight: 1.5,
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                              }}
-                            >
-                              <span
-                                style={{
-                                  color: stage.color,
-                                  marginRight: 8,
-                                  marginTop: 2,
-                                  flexShrink: 0,
-                                  opacity: 0.7,
-                                }}
-                              >
-                                →
-                              </span>
-                              <span>{t}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-=======
   function renderStage(stage: typeof stages[0]) {
     const status = getStageStatus(stage.number);
     const topicsDone = stageProgress(stage.number);
     const stagePct = stage.topics.length > 0 ? Math.round((topicsDone / stage.topics.length) * 100) : 0;
     const stageOpen = isOpen(stage.number);
     const topicsState = completedTopics[stage.number] || Array(stage.topics.length).fill(false);
->>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
 
-<<<<<<< HEAD
-                    {stage.projects.length > 0 && (
-                      <div style={{ marginBottom: 16 }}>
-                        <div
-                          style={{
-                            fontSize: 12,
-                            color: '#2d3050',
-                            letterSpacing: '0.12em',
-                            marginBottom: 10,
-                          }}
-                        >
-                          PRACTICE PROJECTS
-                        </div>
-                        <div
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 7,
-                          }}
-                        >
-                          {stage.projects.map((p, idx) => (
-                            <div
-                              key={idx}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: 9,
-                                fontSize: 15,
-                                color: '#6b7280',
-                              }}
-                            >
-                              <span
-                                style={{
-                                  color: stage.color,
-                                  fontSize: 7,
-                                  marginTop: 4,
-                                  flexShrink: 0,
-                                }}
-                              >
-                                ◆
-                              </span>
-                              <span>{p}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-=======
     const borderColor = status === 'done' ? '#34d399' : status === 'active' ? stage.color : '#1e2030';
     const bgColor = status === 'done' ? '#0a1a12' : status === 'active' ? '#0d0d1f' : '#0c0d17';
->>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
 
-<<<<<<< HEAD
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: 10,
-                        padding: '11px 14px',
-                        background: '#0f1117',
-                        borderRadius: 6,
-                        border: '1px solid #1a1d2e',
-                      }}
-                    >
-                      <span
-                        style={{
-                          color: stage.color,
-                          fontSize: 16,
-                          flexShrink: 0,
-                          marginTop: 1,
-                        }}
-                      >
-                        ✓
-                      </span>
-                      <div>
-                        <span
-                          style={{
-                            fontSize: 12,
-                            color: '#2d3050',
-                            letterSpacing: '0.1em',
-                          }}
-                        >
-                          STAGE GOAL —{' '}
-                        </span>
-                        <span style={{ fontSize: 15, color: '#6b7280' }}>
-                          {stage.goal}
-                        </span>
-=======
     return (
       <div key={stage.number} ref={el => { stageRefs.current[stage.number] = el; }}
         className="stage-card"
@@ -1371,7 +1047,6 @@ export default function Roadmap() {
                       <div className="check-box"
                         style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${topicsState[idx] ? stage.color : '#2d3050'}`, background: topicsState[idx] ? stage.color + '25' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: stage.color, marginTop: 2, flexShrink: 0 }}>
                         {topicsState[idx] ? '✓' : ''}
->>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
                       </div>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flex: 1 }}>
                         <span style={{ fontSize: 11, color: stage.color, opacity: 0.5, minWidth: 20, fontWeight: 600, marginTop: 2 }}>{String(idx + 1).padStart(2, '0')}</span>
@@ -1383,20 +1058,6 @@ export default function Roadmap() {
               </div>
             )}
 
-<<<<<<< HEAD
-        <div
-          style={{
-            marginTop: 40,
-            paddingTop: 20,
-            borderTop: '1px solid #1a1d2e',
-            textAlign: 'center',
-          }}
-        >
-          <div
-            style={{ fontSize: 13, color: '#1e2030', letterSpacing: '0.1em' }}
-          >
-            CLICK ANY STAGE TO EXPAND · FILTER BY TAG ABOVE · BUILD IN ORDER
-=======
             {stage.projects.length > 0 && (
               <div style={{ marginBottom: 18 }}>
                 <div style={{ fontSize: 11, color: '#475569', letterSpacing: '0.12em', marginBottom: 12, fontWeight: 600 }}>PRACTICE PROJECTS</div>
@@ -1428,7 +1089,6 @@ export default function Roadmap() {
                 style={{ width: '100%', minHeight: 80, background: '#0f1117', border: '1px solid #1a1d2e', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#94a3b8', lineHeight: 1.6 }}
               />
             </div>
->>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
           </div>
         )}
       </div>
