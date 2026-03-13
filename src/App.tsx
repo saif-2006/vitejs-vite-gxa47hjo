@@ -384,7 +384,7 @@ const stages = [
 
 const TOTAL_WEEKS = stages.reduce((sum, s) => sum + s.weeks, 0);
 
-// ─── Piston Code Runner ──────────────────────────────────────────────────────
+// ─── Piston Code Runner ───────────────────────────────────────────────────────
 
 async function runCode(code: string, stdin: string): Promise<{ output: string; error: string }> {
   try {
@@ -409,7 +409,7 @@ async function runCode(code: string, stdin: string): Promise<{ output: string; e
   }
 }
 
-// ─── Stage 01 Content ────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface CodingProblem {
   id: string;
@@ -428,144 +428,492 @@ interface TopicContent {
   problems: CodingProblem[];
 }
 
+// ─── Stage 01 Content ─────────────────────────────────────────────────────────
+
 const STAGE01_CONTENT: Record<string, TopicContent> = {
+
   'Variables, strings (f-strings), numbers (int, float), booleans': {
-    explanation: `In Python, variables store data. You don't declare types — Python figures it out.\n\n• Strings (str): text in quotes — "hello"\n• Integers (int): whole numbers — 42\n• Floats (float): decimals — 3.14\n• Booleans (bool): True or False\n\nf-strings embed variables inside strings with curly braces:\n  name = "Alice"\n  print(f"Hello, {name}!")  →  Hello, Alice!\n\nYou can do math inside f-strings too: f"Next year: {age + 1}"`,
-    codeExample: `name = "Alice"\nage = 25\nheight = 5.6\nis_student = True\n\nprint(f"Name: {name}")\nprint(f"Age: {age}")\nprint(f"Height: {height}")\nprint(f"Is student: {is_student}")\nprint(f"Next year: {age + 1}")`,
+    explanation: "Variables store data — no type declarations needed in Python.\n\nStrings hold text: use single or double quotes. F-strings let you embed values directly:\n  name = 'Alice'\n  print(f'Hello {name}!')  # Hello Alice!\n\nNumbers:\n  int   — whole numbers: 42, -7, 0\n  float — decimals: 3.14, -0.5\n\nBooleans: True or False (capital T and F)\n  is_active = True\n  score = 95\n  passed = score >= 60  # True\n\nYou can convert between types:\n  int('42')    # 42\n  float('3.5') # 3.5\n  str(100)     # '100'",
+    codeExample: "name = 'Alice'\nage = 25\nheight = 1.75\nis_student = True\n\nprint(f'Name: {name}')\nprint(f'Age: {age}')\nprint(f'Height: {height:.2f}m')\nprint(f'Student: {is_student}')\n\n# Type conversion\nyear = int(input('Enter year: '))\nprint(f'Next year: {year + 1}')",
     problems: [
-      { id: 's01t00p0', title: 'Personal Info Card', description: 'Ask the user for their name and age. Print a sentence using an f-string.', inputSpec: 'Line 1: a name\nLine 2: an age (integer)', outputSpec: '"My name is {name} and I am {age} years old."', example: { input: 'Alice\n25', output: 'My name is Alice and I am 25 years old.' }, testInput: 'Jordan\n19', expectedOutput: 'My name is Jordan and I am 19 years old.' },
-      { id: 's01t00p1', title: 'Next Year Calculator', description: 'Ask for name and age. Print how old they will be next year.', inputSpec: 'Line 1: name\nLine 2: current age (integer)', outputSpec: '"{name} will be {age+1} next year."', example: { input: 'Bob\n30', output: 'Bob will be 31 next year.' }, testInput: 'Sara\n17', expectedOutput: 'Sara will be 18 next year.' },
-      { id: 's01t00p2', title: 'Price Tag', description: 'Ask for a product name and price (float). Print a price tag formatted to 2 decimal places.', inputSpec: 'Line 1: product name\nLine 2: price (float)', outputSpec: '"{product} costs ${price:.2f}"', example: { input: 'Apple\n0.5', output: 'Apple costs $0.50' }, testInput: 'Laptop\n999.9', expectedOutput: 'Laptop costs $999.90' },
+      {
+        id: 's01t01p0', title: 'Greeting Card',
+        description: 'Read a name and an age. Print a greeting in the exact format shown.',
+        inputSpec: 'Line 1: a name\nLine 2: an age (integer)',
+        outputSpec: 'Hello {name}! You are {age} years old.',
+        example: { input: 'Alice\n25', output: 'Hello Alice! You are 25 years old.' },
+        testInput: 'Marcus\n32', expectedOutput: 'Hello Marcus! You are 32 years old.',
+      },
+      {
+        id: 's01t01p1', title: 'Temperature Converter',
+        description: 'Read a temperature in Celsius. Convert to Fahrenheit (F = C * 9/5 + 32). Print the result with 1 decimal place.',
+        inputSpec: 'One line: temperature in Celsius (number)',
+        outputSpec: '{result}F',
+        example: { input: '0', output: '32.0F' },
+        testInput: '100', expectedOutput: '212.0F',
+      },
+      {
+        id: 's01t01p2', title: 'Simple Calculator',
+        description: 'Read two integers. Print their sum, difference, and product, each on its own line.',
+        inputSpec: 'Line 1: integer a\nLine 2: integer b',
+        outputSpec: '{a+b}\n{a-b}\n{a*b}',
+        example: { input: '5\n3', output: '8\n2\n15' },
+        testInput: '10\n4', expectedOutput: '14\n6\n40',
+      },
     ],
   },
+
   'Lists, dictionaries, sets, tuples — and when to use each': {
-    explanation: `Python has 4 main collection types:\n\n• List [] — ordered, changeable, allows duplicates. Use for sequences.\n  fruits = ["apple", "banana", "cherry"]\n\n• Dictionary {} — key-value pairs. Use for lookup by name.\n  person = {"name": "Alice", "age": 25}\n\n• Set {} — unordered, NO duplicates. Use for unique items.\n  unique = {1, 2, 2, 3}  →  {1, 2, 3}\n\n• Tuple () — ordered, UNCHANGEABLE. Use for fixed data.\n  point = (10.5, 20.3)\n\nRule of thumb: sequences→list, lookup→dict, unique→set, fixed→tuple`,
-    codeExample: `fruits = ["apple", "banana", "cherry"]\nfruits.append("mango")\nprint(fruits[0])  # apple\n\nperson = {"name": "Alice", "age": 25}\nprint(person["name"])  # Alice\n\nnums = {1, 2, 3, 2, 1}\nprint(nums)  # {1, 2, 3}\n\npoint = (10, 20)\nprint(point[0])  # 10`,
+    explanation: "Python has four main collection types:\n\nList — ordered, mutable, allows duplicates:\n  fruits = ['apple', 'banana', 'apple']\n  fruits.append('cherry')\n\nDictionary — key-value pairs, fast lookups:\n  person = {'name': 'Alice', 'age': 25}\n  person['city'] = 'London'\n\nSet — unordered, unique values only, great for deduplication:\n  unique = {1, 2, 3, 2, 1}  # {1, 2, 3}\n  a | b  # union\n  a & b  # intersection\n\nTuple — ordered, immutable (cannot change):\n  point = (10, 20)\n  x, y = point\n\nWhen to use:\n  List → ordered collection you'll modify\n  Dict → lookup by key\n  Set  → need unique items or set operations\n  Tuple → fixed data, coordinates, return values",
+    codeExample: "# List\nscores = [85, 92, 78, 95]\nscores.append(88)\nprint(f'Avg: {sum(scores)/len(scores):.1f}')\n\n# Dictionary\nstudent = {'name': 'Bob', 'grade': 'A'}\nprint(student.get('age', 'not set'))  # not set\n\n# Set - deduplication\nraw = ['alice', 'bob', 'alice', 'carol']\nunique = set(raw)\nprint(sorted(unique))  # ['alice', 'bob', 'carol']\n\n# Tuple\nx, y = (10, 20)\nprint(f'x={x}, y={y}')",
     problems: [
-      { id: 's01t01p0', title: 'Shopping List', description: 'Ask for 3 items (one per line). Store in a list and print the list, then print the second item.', inputSpec: '3 lines, each containing one item name', outputSpec: 'Line 1: the full list\nLine 2: the second item', example: { input: 'apple\nbanana\ncherry', output: "['apple', 'banana', 'cherry']\nbanana" }, testInput: 'milk\neggs\nbread', expectedOutput: "['milk', 'eggs', 'bread']\neggs" },
-      { id: 's01t01p1', title: 'Person Dictionary', description: 'Ask for name, age, and city. Store in a dict and print each value with its label.', inputSpec: 'Line 1: name\nLine 2: age\nLine 3: city', outputSpec: 'Name: {name}\nAge: {age}\nCity: {city}', example: { input: 'Alice\n25\nLondon', output: 'Name: Alice\nAge: 25\nCity: London' }, testInput: 'Marcus\n32\nTokyo', expectedOutput: 'Name: Marcus\nAge: 32\nCity: Tokyo' },
-      { id: 's01t01p2', title: 'Unique Numbers', description: 'Ask for 5 numbers (one per line, some may repeat). Store in a set and print the count of unique values.', inputSpec: '5 lines each with an integer', outputSpec: '"Unique count: {n}"', example: { input: '1\n2\n2\n3\n1', output: 'Unique count: 3' }, testInput: '5\n5\n5\n10\n10', expectedOutput: 'Unique count: 2' },
+      {
+        id: 's01t02p0', title: 'List Stats',
+        description: 'Read n, then n integers on one line (space-separated). Print their minimum, maximum, and sum, each on its own line.',
+        inputSpec: 'Line 1: n\nLine 2: n space-separated integers',
+        outputSpec: '{min}\n{max}\n{sum}',
+        example: { input: '4\n3 1 4 1', output: '1\n4\n9' },
+        testInput: '5\n10 30 20 50 40', expectedOutput: '10\n50\n150',
+      },
+      {
+        id: 's01t02p1', title: 'Dictionary Lookup',
+        description: 'Read n, then n lines of "key value" pairs to build a dictionary. Then read a key and print its value, or "Not found" if missing.',
+        inputSpec: 'Line 1: n\nNext n lines: "key value"\nLast line: key to look up',
+        outputSpec: 'The value, or "Not found"',
+        example: { input: '2\ncolor blue\nsize large\ncolor', output: 'blue' },
+        testInput: '3\nname Alice\ncity London\nage 25\ncountry', expectedOutput: 'Not found',
+      },
+      {
+        id: 's01t02p2', title: 'Set Operations',
+        description: 'Read two lines of space-separated integers. Print their union (sorted, comma-separated) then their intersection (sorted, comma-separated).',
+        inputSpec: 'Line 1: space-separated integers\nLine 2: space-separated integers',
+        outputSpec: 'Line 1: union sorted comma-separated\nLine 2: intersection sorted comma-separated',
+        example: { input: '1 2 3\n2 3 4', output: '1,2,3,4\n2,3' },
+        testInput: '1 2 3 4 5\n3 4 5 6 7', expectedOutput: '1,2,3,4,5,6,7\n3,4,5',
+      },
     ],
   },
+
   'Indexing, slicing, unpacking': {
-    explanation: `Indexing accesses specific elements. Python uses zero-based indexing (first item = index 0).\nNegative indexing counts from the end: -1 is the last item.\n\n  fruits = ["apple", "banana", "cherry"]\n  fruits[0]   →  "apple"\n  fruits[-1]  →  "cherry"\n\nSlicing gets a portion: sequence[start:stop:step]\n  fruits[0:2]   →  ["apple", "banana"]  (stop is exclusive)\n  text[::-1]    →  reverses the string\n\nUnpacking assigns multiple variables at once:\n  a, b, c = [1, 2, 3]\n  first, *rest = [1, 2, 3, 4, 5]  →  first=1, rest=[2,3,4,5]`,
-    codeExample: `text = "Hello, World!"\nprint(text[0])      # H\nprint(text[-1])     # !\nprint(text[0:5])    # Hello\nprint(text[::-1])   # !dlroW ,olleH\n\nnums = [10, 20, 30, 40, 50]\nfirst, second, *rest = nums\nprint(first)   # 10\nprint(rest)    # [30, 40, 50]`,
+    explanation: "Python gives you powerful ways to access and extract data from sequences.\n\nIndexing (0-based, negatives count from end):\n  items = ['a', 'b', 'c', 'd']\n  items[0]   # 'a'  (first)\n  items[-1]  # 'd'  (last)\n  items[1]   # 'b'\n\nSlicing [start:stop:step] — extracts a sub-list:\n  items[1:3]   # ['b', 'c']  (stop is exclusive)\n  items[::2]   # ['a', 'c']  (every other)\n  items[::-1]  # ['d','c','b','a'] (reversed)\n\nUnpacking — assign multiple values at once:\n  a, b, c = [1, 2, 3]\n  first, *rest = [1, 2, 3, 4]  # first=1, rest=[2,3,4]\n  x, y = y, x  # swap two variables!",
+    codeExample: "words = ['the', 'quick', 'brown', 'fox']\n\n# Indexing\nprint(words[0])    # the\nprint(words[-1])   # fox\n\n# Slicing\nprint(words[1:3])  # ['quick', 'brown']\nprint(words[::2])  # ['the', 'brown']\n\n# Unpacking\nfirst, *middle, last = words\nprint(first, last)  # the fox\n\n# Swap\na, b = 10, 20\na, b = b, a\nprint(a, b)  # 20 10",
     problems: [
-      { id: 's01t02p0', title: 'First and Last', description: 'Ask for a word. Print the first letter, last letter, and the word reversed.', inputSpec: 'One line: a word', outputSpec: 'Line 1: first letter\nLine 2: last letter\nLine 3: word reversed', example: { input: 'Python', output: 'P\nn\nnohtyP' }, testInput: 'automation', expectedOutput: 'a\nn\nnoitamotua' },
-      { id: 's01t02p1', title: 'Middle Slice', description: 'Ask for a sentence. Print only characters from index 2 to index 8 (exclusive, so indices 2-7).', inputSpec: 'One line: a sentence (at least 8 characters)', outputSpec: 'One line: characters from index 2 to 7', example: { input: 'Hello World', output: 'llo Wo' }, testInput: 'Programming is fun', expectedOutput: 'ogrammi' },
-      { id: 's01t02p2', title: 'Unpack Three', description: 'Ask for 3 numbers on one line separated by spaces. Unpack them into a, b, c and print their sum.', inputSpec: 'One line: 3 integers separated by spaces', outputSpec: '"Sum: {a+b+c}"', example: { input: '10 20 30', output: 'Sum: 60' }, testInput: '7 14 21', expectedOutput: 'Sum: 42' },
+      {
+        id: 's01t03p0', title: 'First and Last',
+        description: 'Read a sentence. Print its first word on line 1 and its last word on line 2.',
+        inputSpec: 'One line: a sentence (multiple words)',
+        outputSpec: 'Line 1: first word\nLine 2: last word',
+        example: { input: 'the quick brown fox', output: 'the\nfox' },
+        testInput: 'Python is awesome for automation', expectedOutput: 'Python\nautomation',
+      },
+      {
+        id: 's01t03p1', title: 'Every Other',
+        description: 'Read space-separated numbers. Print every other element starting from index 0, each on its own line.',
+        inputSpec: 'One line: space-separated integers',
+        outputSpec: 'Elements at indices 0, 2, 4 ... each on own line',
+        example: { input: '10 20 30 40 50', output: '10\n30\n50' },
+        testInput: '5 10 15 20 25 30', expectedOutput: '5\n15\n25',
+      },
+      {
+        id: 's01t03p2', title: 'Swap Ends',
+        description: 'Read three space-separated values a b c. Swap a and c using unpacking. Print the result space-separated.',
+        inputSpec: 'One line: three space-separated values',
+        outputSpec: 'The three values with first and last swapped, space-separated',
+        example: { input: '1 2 3', output: '3 2 1' },
+        testInput: 'apple banana cherry', expectedOutput: 'cherry banana apple',
+      },
     ],
   },
+
   'if/elif/else, match/case': {
-    explanation: `Conditional statements let your code make decisions.\n\n  if condition:\n      # runs if True\n  elif another_condition:\n      # runs if first was False and this is True\n  else:\n      # runs if all conditions were False\n\nComparison operators: == != > < >= <=\nLogical operators: and, or, not\n\nPython 3.10+ has match/case (like switch in other languages):\n  match command:\n      case "quit":\n          print("Quitting")\n      case _:\n          print("Unknown")  # _ is the default\n\nImportant: use == for comparison, = for assignment.`,
-    codeExample: `score = 75\nif score >= 90:\n    print("Grade: A")\nelif score >= 80:\n    print("Grade: B")\nelif score >= 70:\n    print("Grade: C")\nelse:\n    print("Grade: F")\n\nday = "Monday"\nmatch day:\n    case "Saturday" | "Sunday":\n        print("Weekend!")\n    case _:\n        print("Weekday")`,
+    explanation: "Conditional statements let your code make decisions.\n\nif/elif/else:\n  score = 85\n  if score >= 90:\n      grade = 'A'\n  elif score >= 80:\n      grade = 'B'\n  elif score >= 70:\n      grade = 'C'\n  else:\n      grade = 'F'\n\nPython evaluates top to bottom and stops at the first True condition.\n\nmatch/case (Python 3.10+) — like switch in other languages:\n  match command:\n      case 'quit':\n          quit()\n      case 'help':\n          show_help()\n      case _:  # default\n          print('Unknown command')\n\nCommon patterns:\n  if x > 0 and y > 0:   # both true\n  if x == 0 or y == 0:  # either true\n  if not is_done:        # negation",
+    codeExample: "# Grade classifier\ndef get_grade(score):\n    if score >= 90:\n        return 'A'\n    elif score >= 80:\n        return 'B'\n    elif score >= 70:\n        return 'C'\n    elif score >= 60:\n        return 'D'\n    else:\n        return 'F'\n\nprint(get_grade(95))  # A\nprint(get_grade(72))  # C\n\n# Leap year\nyear = 2000\nif (year % 4 == 0 and year % 100 != 0) or year % 400 == 0:\n    print('Leap year')\nelse:\n    print('Not a leap year')",
     problems: [
-      { id: 's01t03p0', title: 'Grade Calculator', description: 'Ask for a score (0-100). Print the grade: A (90-100), B (80-89), C (70-79), D (60-69), F (below 60).', inputSpec: 'One line: an integer 0-100', outputSpec: '"Grade: X" where X is the letter', example: { input: '85', output: 'Grade: B' }, testInput: '72', expectedOutput: 'Grade: C' },
-      { id: 's01t03p1', title: 'Even or Odd', description: 'Ask for a number. Print "Even", "Odd", or "Zero" if the number is 0.', inputSpec: 'One line: an integer', outputSpec: '"Even", "Odd", or "Zero"', example: { input: '4', output: 'Even' }, testInput: '7', expectedOutput: 'Odd' },
-      { id: 's01t03p2', title: 'Season Finder', description: 'Ask for a month number (1-12). Print the season: Spring (3-5), Summer (6-8), Autumn (9-11), Winter (12,1,2).', inputSpec: 'One line: integer 1-12', outputSpec: 'The season name', example: { input: '7', output: 'Summer' }, testInput: '11', expectedOutput: 'Autumn' },
+      {
+        id: 's01t04p0', title: 'Positive Negative Zero',
+        description: 'Read an integer. Print "positive", "negative", or "zero".',
+        inputSpec: 'One line: an integer',
+        outputSpec: '"positive", "negative", or "zero"',
+        example: { input: '5', output: 'positive' },
+        testInput: '-3', expectedOutput: 'negative',
+      },
+      {
+        id: 's01t04p1', title: 'Grade Classifier',
+        description: 'Read a score (0-100). Print the letter grade: A (90+), B (80+), C (70+), D (60+), F (below 60).',
+        inputSpec: 'One line: an integer score',
+        outputSpec: 'A, B, C, D, or F',
+        example: { input: '92', output: 'A' },
+        testInput: '73', expectedOutput: 'C',
+      },
+      {
+        id: 's01t04p2', title: 'Leap Year',
+        description: 'Read a year. Print "Leap year" if it is a leap year, otherwise "Not a leap year". A year is a leap year if divisible by 4 but not 100, OR divisible by 400.',
+        inputSpec: 'One line: a year (integer)',
+        outputSpec: '"Leap year" or "Not a leap year"',
+        example: { input: '2000', output: 'Leap year' },
+        testInput: '1900', expectedOutput: 'Not a leap year',
+      },
     ],
   },
+
   'for loops, while loops, break, continue, enumerate, zip': {
-    explanation: `FOR loop — iterate over a sequence:\n  for item in ["a", "b", "c"]:\n      print(item)\n  for i in range(5):  # 0, 1, 2, 3, 4\n\nWHILE loop — repeat while condition is True:\n  count = 0\n  while count < 3:\n      count += 1\n\nbreak — exit the loop immediately\ncontinue — skip to the next iteration\n\nenumerate() — get index AND value at the same time:\n  for i, fruit in enumerate(["apple", "banana"]):\n      print(i, fruit)  # 0 apple, then 1 banana\n\nzip() — loop over two lists simultaneously:\n  for name, age in zip(["Alice", "Bob"], [25, 30]):\n      print(name, age)`,
-    codeExample: `fruits = ["apple", "banana", "cherry"]\nfor i, fruit in enumerate(fruits):\n    print(f"{i}: {fruit}")\n\nnames = ["Alice", "Bob"]\nscores = [95, 87]\nfor name, score in zip(names, scores):\n    print(f"{name}: {score}")\n\nfor n in range(10):\n    if n == 3: continue\n    if n == 7: break\n    print(n)`,
+    explanation: "Loops repeat code. Two main types:\n\nfor loop — iterate over a sequence:\n  for i in range(5):       # 0,1,2,3,4\n  for item in my_list:     # each element\n  for i, v in enumerate(items):  # index + value\n  for a, b in zip(list1, list2): # pairs from two lists\n\nwhile loop — repeat while a condition is true:\n  while count < 10:\n      count += 1\n\nControl keywords:\n  break    — exit the loop immediately\n  continue — skip rest of this iteration, go to next\n\nEnumerate gives you index and value:\n  for i, name in enumerate(['Alice', 'Bob']):\n      print(i, name)  # 0 Alice, 1 Bob\n\nZip pairs two lists:\n  for name, score in zip(names, scores):\n      print(f'{name}: {score}')",
+    codeExample: "# FizzBuzz\nfor i in range(1, 16):\n    if i % 15 == 0:\n        print('FizzBuzz')\n    elif i % 3 == 0:\n        print('Fizz')\n    elif i % 5 == 0:\n        print('Buzz')\n    else:\n        print(i)\n\n# Enumerate\nfruits = ['apple', 'banana', 'cherry']\nfor i, fruit in enumerate(fruits, start=1):\n    print(f'{i}. {fruit}')\n\n# While with break\ntotal = 0\nwhile True:\n    n = int(input())\n    if n == 0:\n        break\n    total += n\nprint(total)",
     problems: [
-      { id: 's01t04p0', title: 'Multiplication Table', description: 'Ask for a number n. Print its multiplication table from 1 to 10.', inputSpec: 'One line: an integer n', outputSpec: '10 lines: "n x i = result"', example: { input: '3', output: '3 x 1 = 3\n3 x 2 = 6\n3 x 3 = 9\n3 x 4 = 12\n3 x 5 = 15\n3 x 6 = 18\n3 x 7 = 21\n3 x 8 = 24\n3 x 9 = 27\n3 x 10 = 30' }, testInput: '5', expectedOutput: '5 x 1 = 5\n5 x 2 = 10\n5 x 3 = 15\n5 x 4 = 20\n5 x 5 = 25\n5 x 6 = 30\n5 x 7 = 35\n5 x 8 = 40\n5 x 9 = 45\n5 x 10 = 50' },
-      { id: 's01t04p1', title: 'Sum Until Zero', description: 'Keep reading numbers until the user enters 0. Print the total sum (not including 0).', inputSpec: 'Multiple lines of integers, ending with 0', outputSpec: '"Total: {sum}"', example: { input: '5\n3\n2\n0', output: 'Total: 10' }, testInput: '10\n20\n30\n0', expectedOutput: 'Total: 60' },
-      { id: 's01t04p2', title: 'Numbered List', description: 'Ask for n then n item names. Print as a numbered list using enumerate starting at 1.', inputSpec: 'Line 1: n\nNext n lines: item names', outputSpec: 'n lines: "1. item"', example: { input: '3\napple\nbanana\ncherry', output: '1. apple\n2. banana\n3. cherry' }, testInput: '4\npython\njavascript\nrust\ngo', expectedOutput: '1. python\n2. javascript\n3. rust\n4. go' },
+      {
+        id: 's01t05p0', title: 'FizzBuzz',
+        description: 'Read n. Print FizzBuzz from 1 to n: print "Fizz" for multiples of 3, "Buzz" for multiples of 5, "FizzBuzz" for multiples of both, otherwise the number.',
+        inputSpec: 'One line: integer n',
+        outputSpec: 'n lines of FizzBuzz output',
+        example: { input: '5', output: '1\n2\nFizz\n4\nBuzz' },
+        testInput: '15', expectedOutput: '1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFizzBuzz',
+      },
+      {
+        id: 's01t05p1', title: 'Sum of Evens',
+        description: 'Read space-separated integers. Print the sum of only the even numbers.',
+        inputSpec: 'One line: space-separated integers',
+        outputSpec: 'Sum of even numbers only',
+        example: { input: '1 2 3 4 5 6', output: '12' },
+        testInput: '7 14 3 8 22 5 10', expectedOutput: '54',
+      },
+      {
+        id: 's01t05p2', title: 'Multiplication Table',
+        description: 'Read n. Print the multiplication table for n from 1 to 10, one result per line.',
+        inputSpec: 'One line: integer n',
+        outputSpec: '10 lines: n*1, n*2, ... n*10',
+        example: { input: '3', output: '3\n6\n9\n12\n15\n18\n21\n24\n27\n30' },
+        testInput: '7', expectedOutput: '7\n14\n21\n28\n35\n42\n49\n56\n63\n70',
+      },
     ],
   },
+
   'Functions: parameters, return values, *args, **kwargs, default values': {
-    explanation: `Functions group reusable code. Define with def, call by name.\n\n  def greet(name):           # name is a parameter\n      return f"Hello, {name}!"\n\n  result = greet("Alice")    # "Alice" is the argument\n\nDefault values — used when argument is not provided:\n  def greet(name, greeting="Hello"):\n      return f"{greeting}, {name}!"\n\n*args — any number of positional arguments (tuple):\n  def add(*numbers):\n      return sum(numbers)\n  add(1, 2, 3, 4)  # works!\n\n**kwargs — any number of keyword arguments (dict):\n  def show(**info):\n      for key, val in info.items():\n          print(f"{key}: {val}")\n  show(name="Alice", age=25)`,
-    codeExample: `def power(base, exponent=2):\n    return base ** exponent\n\nprint(power(3))      # 9\nprint(power(2, 10))  # 1024\n\ndef total(*nums):\n    return sum(nums)\n\nprint(total(1, 2, 3, 4, 5))  # 15\n\ndef profile(**info):\n    for k, v in info.items():\n        print(f"{k}: {v}")\n\nprofile(name="Alice", city="London")`,
+    explanation: "Functions package reusable logic. Define once, call many times.\n\nBasic function:\n  def greet(name):\n      return f'Hello {name}!'\n\nDefault parameter values:\n  def greet(name, greeting='Hello'):\n      return f'{greeting} {name}!'\n  greet('Alice')           # Hello Alice!\n  greet('Alice', 'Hi')     # Hi Alice!\n\n*args — accepts any number of positional arguments:\n  def total(*args):\n      return sum(args)\n  total(1, 2, 3, 4)  # 10\n\n**kwargs — accepts any number of keyword arguments:\n  def show(**kwargs):\n      for k, v in kwargs.items():\n          print(f'{k}: {v}')\n  show(name='Alice', age=25)\n\nAlways return something meaningful. Functions that don't return anything return None.",
+    codeExample: "def factorial(n):\n    result = 1\n    for i in range(2, n + 1):\n        result *= i\n    return result\n\nprint(factorial(5))  # 120\n\n# Default parameter\ndef power(base, exp=2):\n    return base ** exp\n\nprint(power(3))    # 9\nprint(power(2, 8)) # 256\n\n# *args\ndef average(*args):\n    return sum(args) / len(args)\n\nprint(average(10, 20, 30))  # 20.0\n\n# **kwargs\ndef profile(**kwargs):\n    for k, v in kwargs.items():\n        print(f'{k}: {v}')\n\nprofile(name='Alice', city='London')",
     problems: [
-      { id: 's01t05p0', title: 'Rectangle Area', description: 'Write area(width, height=10). Ask for width and height (type "default" to use default height of 10). Print the area.', inputSpec: 'Line 1: width (integer)\nLine 2: height (integer or "default")', outputSpec: '"Area: {result}"', example: { input: '5\n4', output: 'Area: 20' }, testInput: '6\ndefault', expectedOutput: 'Area: 60' },
-      { id: 's01t05p1', title: 'Sum of Many', description: 'Ask for numbers on one line separated by spaces. Use a *args function to compute and print their sum.', inputSpec: 'One line: integers separated by spaces', outputSpec: '"Sum: {total}"', example: { input: '1 2 3 4 5', output: 'Sum: 15' }, testInput: '10 20 30 40', expectedOutput: 'Sum: 100' },
-      { id: 's01t05p2', title: 'Greeting Function', description: 'Write greet(name, greeting="Hello", punctuation="!"). Ask for name, greeting word, and punctuation. Print the result.', inputSpec: 'Line 1: name\nLine 2: greeting word\nLine 3: punctuation', outputSpec: '"{greeting}, {name}{punctuation}"', example: { input: 'Alice\nHi\n?', output: 'Hi, Alice?' }, testInput: 'Marcus\nHey\n!!', expectedOutput: 'Hey, Marcus!!' },
+      {
+        id: 's01t06p0', title: 'Factorial',
+        description: 'Read an integer n. Write a function factorial(n) and print its result.',
+        inputSpec: 'One line: integer n (0 <= n <= 12)',
+        outputSpec: 'n! (factorial of n)',
+        example: { input: '5', output: '120' },
+        testInput: '8', expectedOutput: '40320',
+      },
+      {
+        id: 's01t06p1', title: 'Average with *args',
+        description: 'Read space-separated numbers. Pass them to an average(*args) function and print the result to 2 decimal places.',
+        inputSpec: 'One line: space-separated numbers',
+        outputSpec: 'Average to 2 decimal places',
+        example: { input: '10 20 30', output: '20.00' },
+        testInput: '5 15 25 35 45 55', expectedOutput: '30.00',
+      },
+      {
+        id: 's01t06p2', title: 'Word Counter',
+        description: 'Read a sentence then a target word. Write a function count_word(sentence, word) that counts how many times the word appears (case-insensitive). Print the count.',
+        inputSpec: 'Line 1: sentence\nLine 2: word to count',
+        outputSpec: 'Count of the word (integer)',
+        example: { input: 'Hello world hello HELLO\nhello', output: '3' },
+        testInput: 'The cat sat on the mat the cat sat\nthe', expectedOutput: '3',
+      },
     ],
   },
+
   'List comprehensions and dict comprehensions — used in every real script': {
-    explanation: `Comprehensions create lists or dicts in one concise line — very Pythonic.\n\nList comprehension: [expression for item in iterable if condition]\n\n  # Old way:\n  squares = []\n  for n in range(5):\n      squares.append(n ** 2)\n\n  # Comprehension:\n  squares = [n ** 2 for n in range(5)]  →  [0, 1, 4, 9, 16]\n\nWith filter:\n  evens = [n for n in range(10) if n % 2 == 0]\n\nDict comprehension: {key: value for item in iterable}\n  lengths = {word: len(word) for word in ["hi", "hello"]}\n  →  {"hi": 2, "hello": 5}\n\nYou'll use these in almost every real automation script.`,
-    codeExample: `nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]\nevens = [n for n in nums if n % 2 == 0]\nsquares = [n**2 for n in nums]\nupper = [w.upper() for w in ["hello", "world"]]\n\nwords = ["python", "is", "awesome"]\nlengths = {w: len(w) for w in words}\nprint(lengths)`,
+    explanation: "Comprehensions are Python's most powerful one-liner tool. They build lists or dicts in a single readable expression.\n\nList comprehension:\n  [expression for item in iterable if condition]\n\nExamples:\n  squares = [x**2 for x in range(1, 6)]\n  # [1, 4, 9, 16, 25]\n\n  evens = [x for x in range(20) if x % 2 == 0]\n  # [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]\n\n  clean = [s.strip() for s in raw_list]\n\nDict comprehension:\n  {key: value for item in iterable if condition}\n\n  lengths = {word: len(word) for word in words}\n  # {'hello': 5, 'world': 5}\n\n  squared = {x: x**2 for x in range(5)}\n  # {0:0, 1:1, 2:4, 3:9, 4:16}\n\nWhen to use: anytime you'd write a for loop just to build a list or dict.",
+    codeExample: "# List comprehension — squares\nsquares = [x**2 for x in range(1, 6)]\nprint(squares)  # [1, 4, 9, 16, 25]\n\n# With condition — only evens\nnums = [1, 2, 3, 4, 5, 6, 7, 8]\nevens = [x for x in nums if x % 2 == 0]\nprint(evens)  # [2, 4, 6, 8]\n\n# Dict comprehension — word lengths\nwords = ['Python', 'is', 'great']\nlengths = {w: len(w) for w in words}\nprint(lengths)  # {'Python': 6, 'is': 2, 'great': 5}\n\n# Transforming strings\nraw = ['  alice ', '  BOB ', ' carol  ']\nclean = [s.strip().lower() for s in raw]\nprint(clean)  # ['alice', 'bob', 'carol']",
     problems: [
-      { id: 's01t06p0', title: 'Squares List', description: 'Ask for n. Use a list comprehension to create squares from 1 to n. Print the list.', inputSpec: 'One line: integer n', outputSpec: 'The list of squares', example: { input: '5', output: '[1, 4, 9, 16, 25]' }, testInput: '7', expectedOutput: '[1, 4, 9, 16, 25, 36, 49]' },
-      { id: 's01t06p1', title: 'Filter Long Words', description: 'Ask for a sentence. Use a list comprehension to get only words longer than 4 characters. Print the filtered list.', inputSpec: 'One line: a sentence', outputSpec: 'List of words with more than 4 characters', example: { input: 'the quick brown fox jumps', output: "['quick', 'brown', 'jumps']" }, testInput: 'I love programming with python every day', expectedOutput: "['programming', 'python', 'every']" },
-      { id: 's01t06p2', title: 'Word Length Dict', description: 'Ask for a sentence. Use a dict comprehension mapping each word to its length. Print the dict.', inputSpec: 'One line: a sentence with unique words', outputSpec: 'The dictionary', example: { input: 'hello world python', output: "{'hello': 5, 'world': 5, 'python': 6}" }, testInput: 'code is fun', expectedOutput: "{'code': 4, 'is': 2, 'fun': 3}" },
+      {
+        id: 's01t07p0', title: 'Squares List',
+        description: 'Read n. Use a list comprehension to build a list of squares from 1 to n. Print them comma-separated.',
+        inputSpec: 'One line: integer n',
+        outputSpec: 'Squares 1² to n², comma-separated',
+        example: { input: '5', output: '1,4,9,16,25' },
+        testInput: '7', expectedOutput: '1,4,9,16,25,36,49',
+      },
+      {
+        id: 's01t07p1', title: 'Filter Evens',
+        description: 'Read space-separated integers. Use a list comprehension to keep only even numbers. Print them space-separated.',
+        inputSpec: 'One line: space-separated integers',
+        outputSpec: 'Even numbers only, space-separated',
+        example: { input: '1 2 3 4 5 6', output: '2 4 6' },
+        testInput: '11 4 7 8 3 16 9 2', expectedOutput: '4 8 16 2',
+      },
+      {
+        id: 's01t07p2', title: 'Word Lengths',
+        description: 'Read space-separated words. Use a dict comprehension to map each word to its length. Print each pair as "word: length", one per line, in original order.',
+        inputSpec: 'One line: space-separated words',
+        outputSpec: '"word: length" for each word, one per line',
+        example: { input: 'Python is fun', output: 'Python: 6\nis: 2\nfun: 3' },
+        testInput: 'automation engineer freelance', expectedOutput: 'automation: 10\nengineer: 8\nfreelance: 9',
+      },
     ],
   },
+
   'Standard library: os, sys, datetime, json, re, pathlib': {
-    explanation: `Python's standard library handles almost everything — no installation needed.\n\nos — interact with the OS:\n  import os\n  os.getcwd()  # current directory\n  os.path.exists(path)  # check if file exists\n\ndatetime — work with dates and times:\n  from datetime import datetime\n  now = datetime.now()\n  now.strftime("%Y-%m-%d")  →  "2024-01-15"\n\njson — parse and create JSON:\n  import json\n  data = json.loads('{"name": "Alice"}')  # string → dict\n  text = json.dumps({"name": "Alice"})    # dict → string\n\npathlib — modern file paths:\n  from pathlib import Path\n  p = Path("folder/file.txt")\n  p.exists(), p.suffix, p.stem`,
-    codeExample: `import json\nfrom datetime import datetime\n\ndata = {"name": "Alice", "age": 25}\njson_string = json.dumps(data, indent=2)\nprint(json_string)\n\nraw = '{"city": "London", "pop": 9000000}'\nparsed = json.loads(raw)\nprint(parsed["city"])\n\nnow = datetime.now()\nprint(now.strftime("%Y-%m-%d"))`,
+    explanation: "Python ships with a powerful standard library — no installs needed.\n\njson — parse and create JSON:\n  import json\n  data = json.loads('{\"name\": \"Alice\"}')\n  print(data['name'])  # Alice\n  text = json.dumps({'x': 1}, indent=2)\n\nre — regular expressions for pattern matching:\n  import re\n  emails = re.findall(r'[\\w.]+@[\\w.]+', text)\n  nums = re.findall(r'\\d+', '3 cats and 12 dogs')\n\ndatetime — work with dates and times:\n  from datetime import datetime\n  now = datetime.now()\n  dt = datetime.strptime('2025-01-15', '%Y-%m-%d')\n  print(dt.strftime('%d/%m/%Y'))  # 15/01/2025\n\nos — interact with the operating system:\n  import os\n  os.getcwd()           # current directory\n  os.listdir('.')       # list files\n  os.environ.get('HOME') # environment variable\n\nsys — system-level access:\n  import sys\n  sys.argv  # command line arguments\n  sys.exit(0)  # exit script",
+    codeExample: "import json, re\nfrom datetime import datetime\n\n# JSON\nraw = '{\"name\": \"Alice\", \"scores\": [90, 85, 92]}'\ndata = json.loads(raw)\nprint(data['name'])          # Alice\nprint(sum(data['scores']))   # 267\n\n# Regex\ntext = 'Call 555-1234 or 555-5678'\nnumbers = re.findall(r'\\d{3}-\\d{4}', text)\nprint(numbers)  # ['555-1234', '555-5678']\n\n# Datetime\ndate_str = '2025-03-15'\ndt = datetime.strptime(date_str, '%Y-%m-%d')\nprint(dt.strftime('%d %B %Y'))  # 15 March 2025",
     problems: [
-      { id: 's01t07p0', title: 'JSON Builder', description: 'Ask for name, age, and city. Build a dict and print it as formatted JSON with indent=2.', inputSpec: 'Line 1: name\nLine 2: age (integer)\nLine 3: city', outputSpec: 'Formatted JSON with indent=2', example: { input: 'Alice\n25\nLondon', output: '{\n  "name": "Alice",\n  "age": 25,\n  "city": "London"\n}' }, testInput: 'Marcus\n32\nTokyo', expectedOutput: '{\n  "name": "Marcus",\n  "age": 32,\n  "city": "Tokyo"\n}' },
-      { id: 's01t07p1', title: 'JSON Parser', description: 'Given a JSON string, parse it and print the "product" and "price" formatted to 2 decimal places.', inputSpec: 'One line: JSON string with "product" and "price" keys', outputSpec: 'Product: {product}\nPrice: ${price:.2f}', example: { input: '{"product": "Laptop", "price": 999.9}', output: 'Product: Laptop\nPrice: $999.90' }, testInput: '{"product": "Headphones", "price": 49.5}', expectedOutput: 'Product: Headphones\nPrice: $49.50' },
-      { id: 's01t07p2', title: 'Date Formatter', description: 'Ask for a date in YYYY-MM-DD format. Parse it and print in "DD Month YYYY" format (e.g., "15 January 2024").', inputSpec: 'One line: date in YYYY-MM-DD format', outputSpec: 'Date in "DD Month YYYY" format', example: { input: '2024-01-15', output: '15 January 2024' }, testInput: '2026-03-13', expectedOutput: '13 March 2026' },
+      {
+        id: 's01t08p0', title: 'JSON Parser',
+        description: 'Read a JSON string from input. Extract and print the value of the key "name".',
+        inputSpec: 'One line: a JSON string with at least a "name" key',
+        outputSpec: 'The value of "name"',
+        example: { input: '{"name": "Alice", "age": 25}', output: 'Alice' },
+        testInput: '{"name": "Jordan", "city": "Paris", "score": 98}', expectedOutput: 'Jordan',
+      },
+      {
+        id: 's01t08p1', title: 'Number Extractor',
+        description: 'Read a line of text. Use re.findall to extract all integers. Print them comma-separated.',
+        inputSpec: 'One line: text containing integers',
+        outputSpec: 'All integers found, comma-separated in order',
+        example: { input: 'I have 3 cats and 12 dogs', output: '3,12' },
+        testInput: 'Order 42 contains 7 items costing 199 dollars', expectedOutput: '42,7,199',
+      },
+      {
+        id: 's01t08p2', title: 'Date Reformatter',
+        description: 'Read a date in YYYY-MM-DD format. Print it reformatted as DD/MM/YYYY.',
+        inputSpec: 'One line: date string in YYYY-MM-DD format',
+        outputSpec: 'Date in DD/MM/YYYY format',
+        example: { input: '2025-01-15', output: '15/01/2025' },
+        testInput: '2000-12-31', expectedOutput: '31/12/2000',
+      },
     ],
   },
+
   'String methods: .split(), .strip(), .replace(), .join()': {
-    explanation: `String methods are essential for cleaning and processing text in automation.\n\n.split(sep) — split string into list:\n  "hello world".split()   →  ["hello", "world"]\n  "a,b,c".split(",")      →  ["a", "b", "c"]\n\n.strip() — remove leading/trailing whitespace:\n  "  hello  ".strip()     →  "hello"\n\n.replace(old, new) — replace all occurrences:\n  "hello world".replace("world", "Python")  →  "hello Python"\n\n.join(iterable) — join list into a string:\n  ", ".join(["a", "b", "c"])  →  "a, b, c"\n\nOther useful methods: .upper() .lower() .startswith() .endswith() .count() .find()`,
-    codeExample: `raw = "  John Doe , 25 , London  "\nparts = [p.strip() for p in raw.split(",")]\nprint(parts)  # ["John Doe", "25", "London"]\n\nresult = " | ".join(parts)\nprint(result)  # "John Doe | 25 | London"\n\ntext = "I love cats. Cats are great."\nprint(text.replace("cats", "dogs").replace("Cats", "Dogs"))`,
+    explanation: "Strings have powerful built-in methods for manipulation.\n\n.strip() — removes whitespace from both ends:\n  '  hello  '.strip()   # 'hello'\n  'hello\\n'.rstrip()    # 'hello' (right only)\n\n.split() — splits into a list:\n  'a,b,c'.split(',')     # ['a', 'b', 'c']\n  '  a  b  c  '.split() # ['a', 'b', 'c'] (splits on any whitespace)\n\n.join() — joins a list into a string:\n  ','.join(['a', 'b', 'c'])  # 'a,b,c'\n  ' '.join(words)            # join with spaces\n\n.replace() — replaces all occurrences:\n  'hello world'.replace('world', 'Python')  # 'hello Python'\n\nOther useful methods:\n  .upper()   .lower()   .title()   .capitalize()\n  .startswith('hi')  .endswith('!')\n  .count('l')   .find('o')   .index('o')\n  .isdigit()  .isalpha()  .isspace()",
+    codeExample: "# Clean and split CSV\nline = '  Alice , 30 , London  '\nfields = [f.strip() for f in line.split(',')]\nprint(fields)  # ['Alice', '30', 'London']\n\n# Join\nwords = ['Python', 'is', 'powerful']\nprint(' '.join(words))   # Python is powerful\nprint('-'.join(words))   # Python-is-powerful\n\n# Replace\ntext = 'I love Java. Java is great.'\nprint(text.replace('Java', 'Python'))\n# I love Python. Python is great.\n\n# Title case after strip\nmessage = '  hello world  '\nprint(message.strip().title())  # Hello World",
     problems: [
-      { id: 's01t08p0', title: 'CSV Row Parser', description: 'Ask for a CSV line (comma-separated, may have spaces). Split, strip each value, and print each on its own line.', inputSpec: 'One line: comma-separated values (may have spaces)', outputSpec: 'Each value on its own line, stripped', example: { input: 'Alice , 25 , London , developer', output: 'Alice\n25\nLondon\ndeveloper' }, testInput: 'Python , automation , freelance , 2024', expectedOutput: 'Python\nautomation\nfreelance\n2024' },
-      { id: 's01t08p1', title: 'Word Reverser', description: 'Ask for a sentence. Split into words, reverse the word order, join back with spaces and print.', inputSpec: 'One line: a sentence', outputSpec: 'Sentence with word order reversed', example: { input: 'Hello World Python', output: 'Python World Hello' }, testInput: 'I love coding in Python', expectedOutput: 'Python in coding love I' },
-      { id: 's01t08p2', title: 'Text Cleaner', description: 'Ask for a string with "---" as separators. Replace "---" with " | ", strip the whole string, and print.', inputSpec: 'One line: string with "---" separators and possible extra spaces', outputSpec: 'Cleaned string', example: { input: '  apple---banana---cherry  ', output: 'apple | banana | cherry' }, testInput: '  python---javascript---rust  ', expectedOutput: 'python | javascript | rust' },
+      {
+        id: 's01t09p0', title: 'Clean and Title Case',
+        description: 'Read a string with leading/trailing spaces. Strip whitespace then print in title case (first letter of each word capitalized).',
+        inputSpec: 'One line: string with surrounding whitespace',
+        outputSpec: 'Stripped, title-cased string',
+        example: { input: '  hello world  ', output: 'Hello World' },
+        testInput: '  python automation engineer  ', expectedOutput: 'Python Automation Engineer',
+      },
+      {
+        id: 's01t09p1', title: 'CSV Field Extractor',
+        description: 'Read a line of comma-separated values (each may have surrounding spaces). Strip each field and print them one per line.',
+        inputSpec: 'One line: comma-separated values with possible surrounding spaces',
+        outputSpec: 'Each field stripped, one per line',
+        example: { input: ' Alice , 25 , London ', output: 'Alice\n25\nLondon' },
+        testInput: '  Python  ,  Django  ,  FastAPI  ,  Supabase  ', expectedOutput: 'Python\nDjango\nFastAPI\nSupabase',
+      },
+      {
+        id: 's01t09p2', title: 'Word Replacer',
+        description: 'Read a sentence, then the word to find, then the replacement. Print the sentence with all occurrences replaced.',
+        inputSpec: 'Line 1: sentence\nLine 2: word to find\nLine 3: replacement word',
+        outputSpec: 'Modified sentence',
+        example: { input: 'I love cats and cats love me\ncats\ndogs', output: 'I love dogs and dogs love me' },
+        testInput: 'Python is fun and Python is powerful\nPython\nRust', expectedOutput: 'Rust is fun and Rust is powerful',
+      },
     ],
   },
+
   'Regular expressions (re module) — critical for extracting data from text': {
-    explanation: `Regular expressions (regex) find, extract, and validate patterns in text — essential for scraping.\n\n  import re\n\nKey functions:\n  re.search(pattern, text)    — find first match anywhere\n  re.findall(pattern, text)   — find ALL matches → list\n  re.sub(pattern, repl, text) — replace matches\n\nCommon patterns:\n  \\d   — any digit (0-9)\n  \\d+  — one or more digits\n  \\w+  — one or more word characters\n  .    — any character\n  *    — 0 or more\n  +    — 1 or more\n  []   — character class: [aeiou] matches any vowel\n\nExample:\n  phones = re.findall(r"\\d{3}-\\d{4}", "Call 555-1234")`,
-    codeExample: `import re\n\ntext = "Contact: alice@email.com or bob@work.org"\nemails = re.findall(r"[\\w.]+@[\\w.]+", text)\nprint(emails)\n\ntext2 = "I have 3 cats and 12 fish"\nnums = re.findall(r"\\d+", text2)\nprint(nums)  # ["3", "12"]\n\nmasked = re.sub(r"\\d", "#", "Card: 1234 5678")\nprint(masked)  # "Card: #### ####"`,
+    explanation: "Regular expressions (regex) let you find and extract patterns from text.\n\nImport: import re\n\nKey functions:\n  re.findall(pattern, text)  — returns list of all matches\n  re.search(pattern, text)   — finds first match (or None)\n  re.sub(pattern, repl, text) — replaces matches\n  re.match(pattern, text)    — matches at start only\n\nCommon pattern pieces:\n  \\d    — digit (0-9)\n  \\w    — word character (letter/digit/_)\n  \\s    — whitespace\n  .     — any character (except newline)\n  +     — one or more\n  *     — zero or more\n  ?     — zero or one\n  {3}   — exactly 3\n  [abc] — character class (a, b, or c)\n  ^     — start of string\n  $     — end of string\n\nExamples:\n  r'\\d+'         — one or more digits\n  r'[A-Z][a-z]+' — capital letter followed by lowercase\n  r'\\b\\w+@\\w+\\.\\w+' — simple email pattern",
+    codeExample: "import re\n\n# Find all numbers in text\ntext = 'Order 42: 3 shirts at $29 each'\nnums = re.findall(r'\\d+', text)\nprint(nums)  # ['42', '3', '29']\n\n# Extract emails\ntext2 = 'Contact alice@example.com or bob@test.org'\nemails = re.findall(r'[\\w.]+@[\\w.]+\\.[a-z]+', text2)\nprint(emails)  # ['alice@example.com', 'bob@test.org']\n\n# Remove all non-digits (clean phone number)\nphone = '(555) 123-4567'\ndigits = re.sub(r'\\D', '', phone)\nprint(digits)  # 5551234567\n\n# Find capitalized words\nsentence = 'Alice went to London with Bob'\ncaps = re.findall(r'\\b[A-Z][a-z]+', sentence)\nprint(caps)  # ['Alice', 'London', 'Bob']",
     problems: [
-      { id: 's01t09p0', title: 'Number Extractor', description: 'Ask for a sentence containing numbers. Use re.findall to extract all numbers and print them as a list.', inputSpec: 'One line: a sentence containing integers', outputSpec: 'List of number strings found', example: { input: 'I bought 3 apples and 12 oranges for 5 dollars', output: "['3', '12', '5']" }, testInput: 'There are 7 days in a week and 24 hours in a day and 60 minutes in an hour', expectedOutput: "['7', '24', '60']" },
-      { id: 's01t09p1', title: 'Email Validator', description: 'Ask for an email address. Use re.match to check if it matches a basic email pattern. Print "Valid" or "Invalid".', inputSpec: 'One line: an email address', outputSpec: '"Valid" or "Invalid"', example: { input: 'alice@example.com', output: 'Valid' }, testInput: 'not-an-email', expectedOutput: 'Invalid' },
-      { id: 's01t09p2', title: 'Digit Masker', description: 'Ask for a string with digits. Use re.sub to replace all digits with "*". Print the masked string.', inputSpec: 'One line: a string with digits', outputSpec: 'Same string with all digits replaced by "*"', example: { input: 'Card: 4532 1234 5678 9012', output: 'Card: **** **** **** ****' }, testInput: 'Phone: 555-867-5309', expectedOutput: 'Phone: ***-***-****' },
+      {
+        id: 's01t10p0', title: 'Email Extractor',
+        description: 'Read a line of text. Use re.findall to extract all email addresses. Print each on its own line.',
+        inputSpec: 'One line: text containing email addresses',
+        outputSpec: 'Each email address on its own line',
+        example: { input: 'Email hello@example.com or info@test.org for help', output: 'hello@example.com\ninfo@test.org' },
+        testInput: 'Send invoice to billing@company.com and copy admin@mysite.org and ceo@corp.io', expectedOutput: 'billing@company.com\nadmin@mysite.org\nceo@corp.io',
+      },
+      {
+        id: 's01t10p1', title: 'Phone Digit Extractor',
+        description: 'Read a phone number in any format. Use re.sub to remove all non-digit characters. Print only the digits.',
+        inputSpec: 'One line: phone number in any format',
+        outputSpec: 'Only the digits',
+        example: { input: '(123) 456-7890', output: '1234567890' },
+        testInput: '+1-800-555-0199', expectedOutput: '18005550199',
+      },
+      {
+        id: 's01t10p2', title: 'Capitalized Word Finder',
+        description: 'Read a sentence. Use re.findall to find all words that start with a capital letter (ignore the first word if it is at the start of the sentence — just find ALL capitalized words). Print each on its own line.',
+        inputSpec: 'One line: a sentence',
+        outputSpec: 'Capitalized words (matching [A-Z][a-z]+), one per line',
+        example: { input: 'Alice and Bob went to London', output: 'Alice\nBob\nLondon' },
+        testInput: 'Mary visited Paris and met John near the Eiffel Tower', expectedOutput: 'Mary\nParis\nJohn\nEiffel\nTower',
+      },
     ],
   },
+
   'Basic OOP: classes, __init__, methods, self': {
-    explanation: `OOP bundles data and functions together into objects.\n\nA class is a blueprint. An object is an instance created from it.\n\n  class Dog:\n      def __init__(self, name, breed):  # runs when object is created\n          self.name = name              # stores data on the object\n          self.breed = breed\n\n      def bark(self):                   # method (function on the object)\n          return f"{self.name} says: Woof!"\n\n  dog1 = Dog("Rex", "Labrador")\n  print(dog1.bark())   →  Rex says: Woof!\n\nself always refers to the current object and must be the first parameter of every method.`,
-    codeExample: `class BankAccount:\n    def __init__(self, owner, balance=0):\n        self.owner = owner\n        self.balance = balance\n\n    def deposit(self, amount):\n        self.balance += amount\n        return f"Deposited ${amount}. Balance: ${self.balance}"\n\n    def withdraw(self, amount):\n        if amount > self.balance:\n            return "Insufficient funds"\n        self.balance -= amount\n        return f"Withdrew ${amount}. Balance: ${self.balance}"\n\nacc = BankAccount("Alice", 100)\nprint(acc.deposit(50))\nprint(acc.withdraw(30))`,
+    explanation: "Object-Oriented Programming lets you bundle data and behavior together.\n\nA class is a blueprint. An instance is a specific object made from that blueprint.\n\nDefining a class:\n  class Dog:\n      def __init__(self, name, breed):  # constructor\n          self.name = name   # instance attribute\n          self.breed = breed\n\n      def bark(self):  # method\n          return f'{self.name} says: Woof!'\n\n      def info(self):\n          return f'{self.name} ({self.breed})'\n\nUsing it:\n  dog = Dog('Rex', 'Labrador')  # create instance\n  print(dog.bark())   # Rex says: Woof!\n  print(dog.info())   # Rex (Labrador)\n\nself always refers to the current instance.\n__init__ runs automatically when you create an object.\nMethods are just functions that belong to a class and always take self as the first parameter.",
+    codeExample: "class BankAccount:\n    def __init__(self, owner, balance=0):\n        self.owner = owner\n        self.balance = balance\n        self.transactions = []\n\n    def deposit(self, amount):\n        self.balance += amount\n        self.transactions.append(f'+{amount}')\n\n    def withdraw(self, amount):\n        if amount > self.balance:\n            return 'Insufficient funds'\n        self.balance -= amount\n        self.transactions.append(f'-{amount}')\n        return self.balance\n\n    def statement(self):\n        return f'{self.owner}: ${self.balance}'\n\nacc = BankAccount('Alice', 100)\nacc.deposit(50)\nacc.withdraw(30)\nprint(acc.statement())  # Alice: $120",
     problems: [
-      { id: 's01t10p0', title: 'Student Class', description: 'Create Student class with name and grade. Add pass_fail() that returns "Pass" if grade>=50 else "Fail". Ask for name and grade, print both.', inputSpec: 'Line 1: student name\nLine 2: grade (0-100)', outputSpec: 'Student: {name}\nResult: Pass or Fail', example: { input: 'Alice\n75', output: 'Student: Alice\nResult: Pass' }, testInput: 'Bob\n42', expectedOutput: 'Student: Bob\nResult: Fail' },
-      { id: 's01t10p1', title: 'Rectangle Class', description: 'Create Rectangle class with width and height. Add area() and perimeter() methods. Ask for dimensions and print both.', inputSpec: 'Line 1: width\nLine 2: height', outputSpec: 'Area: {area}\nPerimeter: {perimeter}', example: { input: '5\n3', output: 'Area: 15\nPerimeter: 16' }, testInput: '8\n4', expectedOutput: 'Area: 32\nPerimeter: 24' },
-      { id: 's01t10p2', title: 'Counter Class', description: 'Create Counter class starting at 0. Add increment(), decrement(), reset() methods each returning current count. Process commands until "done", print count after each.', inputSpec: 'Multiple lines: "increment", "decrement", or "reset", ending with "done"', outputSpec: 'Count after each command (not "done")', example: { input: 'increment\nincrement\ndecrement\nreset\ndone', output: '1\n2\n1\n0' }, testInput: 'increment\nincrement\nincrement\ndecrement\ndone', expectedOutput: '1\n2\n3\n2' },
+      {
+        id: 's01t11p0', title: 'Rectangle Class',
+        description: 'Create a Rectangle class with width and height. Add area() and perimeter() methods. Read width then height. Print area then perimeter.',
+        inputSpec: 'Line 1: width (integer)\nLine 2: height (integer)',
+        outputSpec: 'Line 1: area\nLine 2: perimeter',
+        example: { input: '4\n3', output: '12\n14' },
+        testInput: '7\n5', expectedOutput: '35\n24',
+      },
+      {
+        id: 's01t11p1', title: 'Bank Account',
+        description: 'Create a BankAccount class (starting balance 0). Read commands: "deposit N", "withdraw N", "balance". For "balance" print the current balance. Process all commands until EOF.',
+        inputSpec: 'Lines of commands: "deposit N", "withdraw N", or "balance"',
+        outputSpec: 'Print current balance each time "balance" is seen',
+        example: { input: 'deposit 100\nwithdraw 30\nbalance', output: '70' },
+        testInput: 'deposit 500\ndeposit 200\nwithdraw 100\nbalance\ndeposit 50\nbalance', expectedOutput: '600\n650',
+      },
+      {
+        id: 's01t11p2', title: 'Student Class',
+        description: 'Create a Student class with name and a list of scores. Add add_scores(scores_list) and average() methods. Read name, then scores space-separated. Print "name: average" with average to 2 decimal places.',
+        inputSpec: 'Line 1: student name\nLine 2: space-separated scores',
+        outputSpec: '{name}: {average:.2f}',
+        example: { input: 'Alice\n90 85 92 88', output: 'Alice: 88.75' },
+        testInput: 'Jordan\n72 68 80 91 55', expectedOutput: 'Jordan: 73.20',
+      },
     ],
   },
+
   'Reading/writing .txt, .json, .csv files': {
-    explanation: `File handling is essential — scripts constantly read inputs and write outputs.\n\nReading a text file:\n  with open("file.txt", "r") as f:\n      content = f.read()        # entire file as string\n      lines = f.readlines()     # list of lines\n\nWriting a text file:\n  with open("file.txt", "w") as f:  # "w" overwrites, "a" appends\n      f.write("Hello\\n")\n\nJSON files:\n  import json\n  with open("data.json", "r") as f:\n      data = json.load(f)           # file → dict\n  with open("data.json", "w") as f:\n      json.dump(data, f, indent=2)  # dict → file\n\nAlways use "with open(...)" — it automatically closes the file even if an error occurs.`,
-    codeExample: `import json\n\ndata = {"name": "Alice", "scores": [95, 87, 92]}\nwith open("student.json", "w") as f:\n    json.dump(data, f, indent=2)\n\nwith open("student.json", "r") as f:\n    loaded = json.load(f)\n    print(loaded["name"])\n    print(sum(loaded["scores"]))`,
+    explanation: "File I/O lets your scripts persist data between runs.\n\nReading/writing text files:\n  with open('file.txt', 'r') as f:\n      content = f.read()       # entire file as string\n      lines = f.readlines()    # list of lines\n\n  with open('file.txt', 'w') as f:\n      f.write('Hello\\n')       # write string\n\nAlways use 'with' — it automatically closes the file.\nModes: 'r' read, 'w' write (overwrites), 'a' append\n\nJSON files:\n  import json\n  with open('data.json', 'r') as f:\n      data = json.load(f)   # parse JSON file\n\n  with open('data.json', 'w') as f:\n      json.dump(data, f, indent=2)\n\nCSV files:\n  import csv\n  with open('data.csv', 'r') as f:\n      reader = csv.DictReader(f)\n      for row in reader:\n          print(row['name'])\n\n  with open('out.csv', 'w', newline='') as f:\n      writer = csv.DictWriter(f, fieldnames=['name', 'age'])\n      writer.writeheader()\n      writer.writerow({'name': 'Alice', 'age': 25})",
+    codeExample: "import json\n\n# Write and read text file\nlines = ['Python', 'automation', 'is great']\nwith open('notes.txt', 'w') as f:\n    f.write('\\n'.join(lines))\n\nwith open('notes.txt', 'r') as f:\n    content = f.readlines()\nprint(f'Lines: {len(content)}')\nprint(content[0].strip())\n\n# Write and read JSON\ndata = {'name': 'Alice', 'scores': [90, 85]}\nwith open('data.json', 'w') as f:\n    json.dump(data, f)\n\nwith open('data.json', 'r') as f:\n    loaded = json.load(f)\nprint(loaded['name'])  # Alice",
     problems: [
-      { id: 's01t11p0', title: 'File Writer and Reader', description: 'Ask for 3 lines of text. Write them to output.txt. Read it back and print the number of lines and the second line.', inputSpec: '3 lines of text', outputSpec: 'Lines: 3\n{second line}', example: { input: 'Hello\nWorld\nPython', output: 'Lines: 3\nWorld' }, testInput: 'Automation\nIs\nPowerful', expectedOutput: 'Lines: 3\nIs' },
-      { id: 's01t11p1', title: 'JSON Save and Load', description: 'Ask for a name and 3 scores. Build a dict, save to scores.json, load it back, print the name and average score to 1 decimal.', inputSpec: 'Line 1: name\nLines 2-4: three integer scores', outputSpec: 'Name: {name}\nAverage: {avg}', example: { input: 'Alice\n90\n85\n92', output: 'Name: Alice\nAverage: 89.0' }, testInput: 'Bob\n70\n80\n75', expectedOutput: 'Name: Bob\nAverage: 75.0' },
-      { id: 's01t11p2', title: 'Line Counter', description: 'Ask for n lines of text. Write to a file. Then read and print: total lines, total words, total characters (no newlines).', inputSpec: 'Line 1: n\nNext n lines: text', outputSpec: 'Lines: {n}\nWords: {w}\nChars: {c}', example: { input: '2\nHello World\nPython is great', output: 'Lines: 2\nWords: 5\nChars: 26' }, testInput: '3\nI love Python\nAutomation is key\nKeep coding', expectedOutput: 'Lines: 3\nWords: 8\nChars: 37' },
+      {
+        id: 's01t12p0', title: 'File Writer and Reader',
+        description: 'Read 3 lines of text. Write them to "output.txt". Read the file back. Print "Lines: {count}" then print the second line.',
+        inputSpec: '3 lines of text',
+        outputSpec: '"Lines: 3" then the second line',
+        example: { input: 'Hello\nWorld\nPython', output: 'Lines: 3\nWorld' },
+        testInput: 'Automation\nIs\nPowerful', expectedOutput: 'Lines: 3\nIs',
+      },
+      {
+        id: 's01t12p1', title: 'JSON Save and Load',
+        description: 'Read n, then n "key value" pairs. Build a dict, save to "data.json", load it back. Print all key-value pairs sorted by key, one per line as "key: value".',
+        inputSpec: 'Line 1: n\nNext n lines: "key value"',
+        outputSpec: 'Sorted key: value pairs',
+        example: { input: '2\nname Alice\ncity London', output: 'city: London\nname: Alice' },
+        testInput: '3\nage 30\nname Bob\ncountry USA', expectedOutput: 'age: 30\ncountry: USA\nname: Bob',
+      },
+      {
+        id: 's01t12p2', title: 'Number Summer',
+        description: 'Read n, then n integers on one line (space-separated). Write each number on its own line to "nums.txt". Read the file back and print the total sum.',
+        inputSpec: 'Line 1: n\nLine 2: n space-separated integers',
+        outputSpec: 'Sum of all numbers',
+        example: { input: '3\n10 20 30', output: '60' },
+        testInput: '5\n100 200 300 400 500', expectedOutput: '1500',
+      },
     ],
   },
+
   'Error handling: try/except/finally, raising exceptions, custom error messages': {
-    explanation: `Error handling prevents your script from crashing when something goes wrong.\n\n  try:\n      risky_code()\n  except ValueError as e:\n      print(f"Value error: {e}")\n  except (TypeError, KeyError) as e:\n      print(f"Error: {e}")\n  finally:\n      print("This always runs")  # cleanup code\n\nRaising exceptions:\n  raise ValueError("Age must be positive")\n\nCommon exception types:\n  ValueError — wrong value type (int("hello"))\n  TypeError — wrong type ("hello" + 5)\n  KeyError — dict key not found\n  IndexError — list index out of range\n  ZeroDivisionError — dividing by zero\n\nBest practice: always catch specific exceptions, never bare except:`,
-    codeExample: `def safe_divide(a, b):\n    try:\n        return a / b\n    except ZeroDivisionError:\n        return "Error: Cannot divide by zero"\n    except TypeError:\n        return "Error: Please provide numbers"\n\nprint(safe_divide(10, 2))   # 5.0\nprint(safe_divide(10, 0))   # Error: Cannot divide by zero\n\ndef get_age(value):\n    try:\n        age = int(value)\n        if age < 0:\n            raise ValueError("Age cannot be negative")\n        return age\n    except ValueError as e:\n        return f"Invalid: {e}"`,
+    explanation: "Error handling prevents scripts from crashing when things go wrong.\n\nBasic structure:\n  try:\n      risky_code()\n  except ValueError as e:\n      print(f'Value error: {e}')\n  except (TypeError, KeyError):\n      print('Type or key error')\n  else:\n      print('No error occurred')  # runs if no exception\n  finally:\n      print('Always runs')  # runs regardless\n\nRaising exceptions:\n  if age < 0:\n      raise ValueError('Age cannot be negative')\n\nCommon exception types:\n  ValueError    — wrong value (int('abc'))\n  TypeError     — wrong type ('a' + 1)\n  KeyError      — dict key missing\n  IndexError    — list index out of range\n  ZeroDivisionError — divide by zero\n  FileNotFoundError — file doesn't exist\n\nBest practice: always catch SPECIFIC exceptions. Never use bare except: — it hides real bugs.",
+    codeExample: "def safe_divide(a, b):\n    try:\n        return a / b\n    except ZeroDivisionError:\n        return 'Error: division by zero'\n    except TypeError:\n        return 'Error: must be numbers'\n\nprint(safe_divide(10, 2))   # 5.0\nprint(safe_divide(10, 0))   # Error: division by zero\n\ndef validate_age(age):\n    if age < 0 or age > 120:\n        raise ValueError(f'Age {age} is out of range (0-120)')\n    return age\n\ntry:\n    print(validate_age(25))   # 25\n    print(validate_age(-1))   # raises ValueError\nexcept ValueError as e:\n    print(f'Error: {e}')",
     problems: [
-      { id: 's01t12p0', title: 'Safe Division', description: 'Ask for two values. Try to divide the first by the second. Handle ZeroDivisionError and ValueError (non-numeric). Print the result or error.', inputSpec: 'Line 1: first value\nLine 2: second value', outputSpec: 'Result as float, "Error: division by zero", or "Error: invalid input"', example: { input: '10\n2', output: '5.0' }, testInput: '10\n0', expectedOutput: 'Error: division by zero' },
-      { id: 's01t12p1', title: 'Safe List Access', description: 'Ask for space-separated items and an index. Access that index. Handle IndexError. Print the item or error.', inputSpec: 'Line 1: space-separated items\nLine 2: index (integer)', outputSpec: 'The item or "Error: index out of range"', example: { input: 'apple banana cherry\n1', output: 'banana' }, testInput: 'apple banana cherry\n10', expectedOutput: 'Error: index out of range' },
-      { id: 's01t12p2', title: 'Age Validator', description: 'Ask for an age. Convert to int — if invalid raise ValueError. If negative raise ValueError with "Age cannot be negative". Print "Valid age: {age}" or "Error: {message}".', inputSpec: 'One line: age input', outputSpec: '"Valid age: {age}" or "Error: {message}"', example: { input: '25', output: 'Valid age: 25' }, testInput: '-5', expectedOutput: 'Error: Age cannot be negative' },
+      {
+        id: 's01t13p0', title: 'Safe Division',
+        description: 'Read two values. Try to convert them to numbers and divide the first by the second. Handle ZeroDivisionError and ValueError. Print the result as a float or the error message.',
+        inputSpec: 'Line 1: value a\nLine 2: value b',
+        outputSpec: 'Result as float, or "Error: division by zero", or "Error: invalid input"',
+        example: { input: '10\n4', output: '2.5' },
+        testInput: '15\n0', expectedOutput: 'Error: division by zero',
+      },
+      {
+        id: 's01t13p1', title: 'Safe List Access',
+        description: 'Read space-separated items, then an index. Try to access that index. Handle IndexError. Print the item or "Error: index out of range".',
+        inputSpec: 'Line 1: space-separated items\nLine 2: index (integer)',
+        outputSpec: 'The item, or "Error: index out of range"',
+        example: { input: 'apple banana cherry\n1', output: 'banana' },
+        testInput: 'apple banana cherry\n10', expectedOutput: 'Error: index out of range',
+      },
+      {
+        id: 's01t13p2', title: 'Age Validator',
+        description: 'Read an age. Write validate_age(age) that raises ValueError if age is not 0-120. Print "Valid age: {age}" or "Error: {message}".',
+        inputSpec: 'One line: an age value',
+        outputSpec: '"Valid age: {age}" or "Error: {message}"',
+        example: { input: '25', output: 'Valid age: 25' },
+        testInput: '150', expectedOutput: 'Error: Age must be between 0 and 120',
+      },
     ],
   },
+
   'Logging with the logging module instead of print() — for unattended scripts': {
-    explanation: `When scripts run unattended (on servers, scheduled), print() is not enough. logging gives you:\n• Log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL\n• Timestamps automatically\n• Write to files easily\n• Turn off debug messages in production\n\n  import logging\n  logging.basicConfig(\n      level=logging.DEBUG,\n      format="%(asctime)s - %(levelname)s - %(message)s"\n  )\n\n  logging.debug("Detailed debug info")\n  logging.info("Script started")\n  logging.warning("Something unexpected")\n  logging.error("An error occurred")\n\nIn production: set level=logging.WARNING\nIn development: set level=logging.DEBUG`,
-    codeExample: `import logging\n\nlogging.basicConfig(\n    level=logging.DEBUG,\n    format="%(levelname)s - %(message)s"\n)\n\ndef process_data(data):\n    logging.info(f"Processing {len(data)} items")\n    results = []\n    for item in data:\n        try:\n            results.append(int(item) * 2)\n            logging.debug(f"Processed: {item}")\n        except ValueError:\n            logging.warning(f"Skipped: {item}")\n    return results\n\nprint(process_data(["1", "2", "bad", "4"]))`,
+    explanation: "When scripts run unattended (scheduled, on servers), print() is not enough. The logging module gives you:\n\n• Log levels (in order of severity):\n  DEBUG < INFO < WARNING < ERROR < CRITICAL\n\n• Timestamps and labels automatically\n• Easy file output\n• Turn off debug messages in production\n\nBasic setup:\n  import logging, sys\n  logging.basicConfig(\n      stream=sys.stdout,\n      level=logging.DEBUG,\n      format='%(levelname)s - %(message)s'\n  )\n\n  logging.debug('Detailed debug info')\n  logging.info('Script started')\n  logging.warning('Something unexpected')\n  logging.error('An error occurred')\n  logging.critical('Fatal error!')\n\nIn production: set level=logging.WARNING (DEBUG and INFO won't print)\nIn development: set level=logging.DEBUG\n\nAlways use logging over print in any script that will run without you watching it.",
+    codeExample: "import logging, sys\n\nlogging.basicConfig(\n    stream=sys.stdout,\n    level=logging.DEBUG,\n    format='%(levelname)s - %(message)s'\n)\n\ndef process_items(items):\n    logging.info(f'Processing {len(items)} items')\n    results = []\n    for item in items:\n        try:\n            results.append(int(item) * 2)\n            logging.debug(f'Processed: {item}')\n        except ValueError:\n            logging.warning(f'Skipped invalid: {item}')\n    return results\n\ndata = ['1', '2', 'bad', '4']\nprint(process_items(data))",
     problems: [
-      { id: 's01t13p0', title: 'Logging Levels', description: 'Set up logging with format "%(levelname)s - %(message)s". Ask for a number. Log WARNING if >100, ERROR if <0, INFO "Value accepted" otherwise. Print the log line.', inputSpec: 'One line: an integer', outputSpec: 'The log message triggered', example: { input: '50', output: 'INFO - Value accepted' }, testInput: '150', expectedOutput: 'WARNING - Value too high' },
-      { id: 's01t13p1', title: 'Safe Processor', description: 'Set up logging format "%(levelname)s - %(message)s". Ask for space-separated values. Log DEBUG "Processed: {n}" for valid ints, WARNING "Skipped: {val}" for invalid. Print all log lines.', inputSpec: 'One line: space-separated values (mix of valid/invalid)', outputSpec: 'One log line per value', example: { input: '1 2 bad 4', output: 'DEBUG - Processed: 1\nDEBUG - Processed: 2\nWARNING - Skipped: bad\nDEBUG - Processed: 4' }, testInput: '10 hello 30 world', expectedOutput: 'DEBUG - Processed: 10\nWARNING - Skipped: hello\nDEBUG - Processed: 30\nWARNING - Skipped: world' },
-      { id: 's01t13p2', title: 'Script Logger', description: 'Log INFO "Script started". Ask for a number, compute 100/n. Log INFO "Result: {result}" or ERROR "Failed: division by zero". Then log INFO "Script finished". Print all 3 log lines.', inputSpec: 'One line: a number', outputSpec: '3 log lines', example: { input: '5', output: 'INFO - Script started\nINFO - Result: 20.0\nINFO - Script finished' }, testInput: '0', expectedOutput: 'INFO - Script started\nERROR - Failed: division by zero\nINFO - Script finished' },
+      {
+        id: 's01t14p0', title: 'Log by Value',
+        description: 'Set up logging to stdout with format "%(levelname)s - %(message)s". Read an integer. Log WARNING "Value above 100" if >100, ERROR "Value is negative" if <0, INFO "Value is valid" otherwise.',
+        inputSpec: 'One line: an integer',
+        outputSpec: 'The appropriate log line',
+        example: { input: '50', output: 'INFO - Value is valid' },
+        testInput: '150', expectedOutput: 'WARNING - Value above 100',
+      },
+      {
+        id: 's01t14p1', title: 'Processor Logger',
+        description: 'Set up logging to stdout with format "%(levelname)s - %(message)s". Read space-separated values. For each: log INFO "Processed: {v}" if it can be converted to int, WARNING "Skipped: {v}" otherwise.',
+        inputSpec: 'One line: space-separated values (mix of valid integers and invalid)',
+        outputSpec: 'One log line per value',
+        example: { input: '1 2 bad 4', output: 'INFO - Processed: 1\nINFO - Processed: 2\nWARNING - Skipped: bad\nINFO - Processed: 4' },
+        testInput: '10 hello 30 world 50', expectedOutput: 'INFO - Processed: 10\nWARNING - Skipped: hello\nINFO - Processed: 30\nWARNING - Skipped: world\nINFO - Processed: 50',
+      },
+      {
+        id: 's01t14p2', title: 'Script Logger',
+        description: 'Set up logging to stdout with format "%(levelname)s - %(message)s". Log INFO "Script started". Read n, compute 100/n. Log INFO "Result: {result}" or ERROR "Division by zero". Then log INFO "Script finished".',
+        inputSpec: 'One line: integer n',
+        outputSpec: '3 log lines',
+        example: { input: '5', output: 'INFO - Script started\nINFO - Result: 20.0\nINFO - Script finished' },
+        testInput: '4', expectedOutput: 'INFO - Script started\nINFO - Result: 25.0\nINFO - Script finished',
+      },
     ],
   },
+
 };
 
+// ─── Stage 01 Final Problems ──────────────────────────────────────────────────
+
 const STAGE01_FINAL_PROBLEMS: CodingProblem[] = [
-  { id: 's01final0', title: 'Contact Book', description: 'Ask for n contacts (name,phone per line). Store in a dict. Then ask for a name to look up. Print the phone or "Not found".', inputSpec: 'Line 1: n\nNext n lines: "name,phone"\nLast line: name to look up', outputSpec: 'Phone number or "Not found"', example: { input: '3\nAlice,555-1234\nBob,555-5678\nCarol,555-9012\nBob', output: '555-5678' }, testInput: '3\nAlice,555-1234\nBob,555-5678\nCarol,555-9012\nDave', expectedOutput: 'Not found' },
-  { id: 's01final1', title: 'Word Frequency Counter', description: 'Ask for a sentence. Count frequency of each word (case-insensitive). Print each word and count in alphabetical order as "word: count".', inputSpec: 'One line: a sentence', outputSpec: 'One line per word alphabetically: "word: count"', example: { input: 'the cat sat on the mat the cat', output: 'cat: 2\nmat: 1\non: 1\nsat: 1\nthe: 3' }, testInput: 'to be or not to be that is the question', expectedOutput: 'be: 2\nis: 1\nnot: 1\nor: 1\nquestion: 1\nthat: 1\nthe: 1\nto: 2' },
-  { id: 's01final2', title: 'Student Grade Manager', description: 'Create a Student class with name and scores list. Add add_score(), average(), and grade() (A/B/C/D/F by average). Ask for name, then scores until "done". Print name, average (1 decimal), and grade.', inputSpec: 'Line 1: name\nNext lines: integer scores\n"done" to finish', outputSpec: 'Name: {name}\nAverage: {avg}\nGrade: {letter}', example: { input: 'Alice\n90\n85\n92\n88\ndone', output: 'Name: Alice\nAverage: 88.8\nGrade: B' }, testInput: 'Bob\n55\n62\n48\n70\ndone', expectedOutput: 'Name: Bob\nAverage: 58.8\nGrade: F' },
-  { id: 's01final3', title: 'Data Cleaner Pipeline', description: 'Ask for n lines of raw data ("name, age, city"). Clean each: strip whitespace from each field, convert age to int. Skip invalid age records with a warning. Print valid records as "name | age | city" and warnings as "WARNING - Skipped: {raw_line}".', inputSpec: 'Line 1: n\nNext n lines: "name, age, city" with spaces', outputSpec: 'Valid: "name | age | city"\nInvalid: "WARNING - Skipped: {line}"', example: { input: '3\n Alice , 25 , London \n Bob , bad , Paris \n Carol , 30 , Tokyo ', output: 'Alice | 25 | London\nWARNING - Skipped:  Bob , bad , Paris \nCarol | 30 | Tokyo' }, testInput: '3\n  Marcus , 32 , Berlin  \n  Jane , abc , Oslo  \n  Kim , 28 , Seoul  ', expectedOutput: 'Marcus | 32 | Berlin\nWARNING - Skipped:   Jane , abc , Oslo  \nKim | 28 | Seoul' },
-  { id: 's01final4', title: 'File TODO App', description: 'Read existing todos from todos.json if it exists (default to empty list). Ask for a command: "add {task}", "list", or "done {index}" (1-based). Execute, save back to todos.json, and print result.', inputSpec: 'One line: a command', outputSpec: 'add: "Added: {task}"\nlist: numbered list or "No todos"\ndone: "Completed: {task}"', example: { input: 'add Buy groceries', output: 'Added: Buy groceries' }, testInput: 'list', expectedOutput: 'No todos' },
+  {
+    id: 's01final0', title: 'Contact Book',
+    description: 'Read n contacts in "name,phone" format. Store in a dict. Read a name to look up. Print the phone number or "Not found".',
+    inputSpec: 'Line 1: n\nNext n lines: "name,phone"\nLast line: name to look up',
+    outputSpec: 'Phone number or "Not found"',
+    example: { input: '3\nAlice,555-1234\nBob,555-5678\nCarol,555-9012\nBob', output: '555-5678' },
+    testInput: '3\nAlice,555-1234\nBob,555-5678\nCarol,555-9012\nDave', expectedOutput: 'Not found',
+  },
+  {
+    id: 's01final1', title: 'Word Frequency Counter',
+    description: 'Read a sentence. Count each word (case-insensitive). Print each word and count in alphabetical order as "word: count".',
+    inputSpec: 'One line: a sentence',
+    outputSpec: '"word: count" for each word, alphabetically sorted',
+    example: { input: 'the cat sat on the mat', output: 'cat: 1\nmat: 1\non: 1\nsat: 1\nthe: 2' },
+    testInput: 'to be or not to be that is the question', expectedOutput: 'be: 2\nis: 1\nnot: 1\nor: 1\nquestion: 1\nthat: 1\nthe: 1\nto: 2',
+  },
+  {
+    id: 's01final2', title: 'Student Grade Manager',
+    description: 'Create a Student class with name and scores. Add add_score(), average(), and grade() (A>=90, B>=80, C>=70, D>=60, F otherwise). Read name, then scores until "done". Print Name, Average (1 decimal), Grade.',
+    inputSpec: 'Line 1: name\nNext lines: integer scores\n"done" to finish',
+    outputSpec: 'Name: {name}\nAverage: {avg:.1f}\nGrade: {letter}',
+    example: { input: 'Alice\n90\n85\n92\n88\ndone', output: 'Name: Alice\nAverage: 88.8\nGrade: B' },
+    testInput: 'Bob\n55\n62\n48\n70\ndone', expectedOutput: 'Name: Bob\nAverage: 58.8\nGrade: F',
+  },
+  {
+    id: 's01final3', title: 'Data Cleaner',
+    description: 'Set up logging to stdout ("%(levelname)s - %(message)s"). Read n records in "name,age,city" format. For each: strip all fields, try to convert age to int — if invalid log WARNING "Skipped: {raw}" and skip. Otherwise print "name | age | city".',
+    inputSpec: 'Line 1: n\nNext n lines: "name,age,city"',
+    outputSpec: 'Valid: "name | age | city"\nInvalid: "WARNING - Skipped: {raw line}"',
+    example: { input: '3\nAlice,25,London\nBob,bad,Paris\nCarol,30,Tokyo', output: 'Alice | 25 | London\nWARNING - Skipped: Bob,bad,Paris\nCarol | 30 | Tokyo' },
+    testInput: '4\nMarcus,32,Berlin\nJane,abc,Oslo\nKim,28,Seoul\nAlex,xyz,Lima', expectedOutput: 'Marcus | 32 | Berlin\nWARNING - Skipped: Jane,abc,Oslo\nKim | 28 | Seoul\nWARNING - Skipped: Alex,xyz,Lima',
+  },
+  {
+    id: 's01final4', title: 'Shopping Cart',
+    description: 'Implement a shopping cart. Process commands: "add item", "remove item", "list", "total". For "add": print "Added: {item}". For "remove": print "Removed: {item}" or "Not found: {item}". For "list": print numbered items or "Cart is empty". For "total": print "Items: {count}".',
+    inputSpec: 'Lines of commands until EOF',
+    outputSpec: 'Response to each command',
+    example: { input: 'add Apple\nadd Banana\nlist', output: 'Added: Apple\nAdded: Banana\n1. Apple\n2. Banana' },
+    testInput: 'add Python\nadd Django\nadd Flask\nremove Django\nlist\ntotal', expectedOutput: 'Added: Python\nAdded: Django\nAdded: Flask\nRemoved: Django\n1. Python\n2. Flask\nItems: 2',
+  },
 ];
 
-// ─── Topic Learn Modal ───────────────────────────────────────────────────────
+// ─── Code Problem Block ───────────────────────────────────────────────────────
 
 function CodeProblemBlock({
   problem, color, index, onPass,
@@ -574,15 +922,9 @@ function CodeProblemBlock({
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [running, setRunning] = useState(false);
-  const [result, setResult] = useState<{ output: string; error: string; passed?: boolean } | null>(null);
+  const [result, setResult] = useState<{ output: string; error: string; passed: boolean } | null>(null);
   const [passed, setPassed] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0] || null;
-    setFile(f);
-    setResult(null);
-  };
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const handleRun = async () => {
     if (!file) return;
@@ -591,40 +933,36 @@ function CodeProblemBlock({
     try {
       const code = await file.text();
       const { output, error } = await runCode(code, problem.testInput);
-      const actualOutput = output.trim();
-      const expectedOutput = problem.expectedOutput.trim();
-      const ok = actualOutput === expectedOutput;
-      setResult({ output: actualOutput || error, error, passed: ok });
-      if (ok) { setPassed(true); setTimeout(onPass, 800); }
+      const ok = output === problem.expectedOutput.trim();
+      setResult({ output: output || error, error, passed: ok });
+      if (ok) { setPassed(true); setTimeout(onPass, 600); }
     } catch {
-      setResult({ output: '', error: 'Failed to run code.', passed: false });
+      setResult({ output: '', error: 'Failed to run.', passed: false });
     }
     setRunning(false);
   };
 
   return (
-    <div style={{ background: '#07080f', border: `1px solid ${passed ? '#34d39940' : result && !result.passed ? '#f8717130' : '#1e2030'}`, borderRadius: 10, padding: 18, marginBottom: 14, transition: 'border-color 0.2s' }}>
+    <div style={{ background: '#07080f', border: `1px solid ${passed ? '#34d39940' : result && !result.passed ? '#f8717128' : '#1e2030'}`, borderRadius: 10, padding: 18, marginBottom: 14, transition: 'border-color 0.2s' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-        <div style={{ width: 24, height: 24, borderRadius: '50%', background: passed ? '#34d399' : color + '30', border: `2px solid ${passed ? '#34d399' : color + '60'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: passed ? '#07080f' : color, flexShrink: 0 }}>
+        <div style={{ width: 26, height: 26, borderRadius: '50%', background: passed ? '#34d399' : color + '22', border: `2px solid ${passed ? '#34d399' : color + '55'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: passed ? '#07080f' : color, flexShrink: 0 }}>
           {passed ? '✓' : index + 1}
         </div>
         <div style={{ fontSize: 14, fontWeight: 700, color: '#e2e8f0' }}>{problem.title}</div>
       </div>
       <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.7, marginBottom: 14 }}>{problem.description}</div>
 
-      {/* Specs */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
         <div style={{ background: '#0c0d17', borderRadius: 8, padding: '10px 12px' }}>
-          <div style={{ fontSize: 10, color: color, letterSpacing: '0.12em', fontWeight: 600, marginBottom: 6 }}>INPUT</div>
+          <div style={{ fontSize: 10, color: color, letterSpacing: '0.12em', fontWeight: 600, marginBottom: 6 }}>INPUT FORMAT</div>
           <pre style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'monospace' }}>{problem.inputSpec}</pre>
         </div>
         <div style={{ background: '#0c0d17', borderRadius: 8, padding: '10px 12px' }}>
-          <div style={{ fontSize: 10, color: color, letterSpacing: '0.12em', fontWeight: 600, marginBottom: 6 }}>OUTPUT</div>
+          <div style={{ fontSize: 10, color: color, letterSpacing: '0.12em', fontWeight: 600, marginBottom: 6 }}>OUTPUT FORMAT</div>
           <pre style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'monospace' }}>{problem.outputSpec}</pre>
         </div>
       </div>
 
-      {/* Example */}
       <div style={{ background: '#0c0d17', borderRadius: 8, padding: '10px 12px', marginBottom: 14, border: `1px solid ${color}15` }}>
         <div style={{ fontSize: 10, color: color, letterSpacing: '0.12em', fontWeight: 600, marginBottom: 8 }}>EXAMPLE</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -639,34 +977,28 @@ function CodeProblemBlock({
         </div>
       </div>
 
-      {/* Upload + Run */}
       {!passed && (
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <input ref={fileInputRef} type="file" accept=".py" onChange={handleFileChange} style={{ display: 'none' }} />
-          <button onClick={() => fileInputRef.current?.click()} style={{ background: '#1a1d2e', border: `1px solid #2d3050`, color: '#94a3b8', fontSize: 12, fontWeight: 600, padding: '8px 14px', borderRadius: 7, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+          <input ref={fileRef} type="file" accept=".py" onChange={e => { setFile(e.target.files?.[0] || null); setResult(null); }} style={{ display: 'none' }} />
+          <button onClick={() => fileRef.current?.click()} style={{ background: '#1a1d2e', border: '1px solid #2d3050', color: '#94a3b8', fontSize: 12, fontWeight: 600, padding: '8px 14px', borderRadius: 7, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
             {file ? `📄 ${file.name}` : '📁 Upload .py file'}
           </button>
           <button onClick={handleRun} disabled={!file || running} style={{ background: file && !running ? color : '#1e2030', border: 'none', color: file && !running ? '#07080f' : '#374151', fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 7, cursor: file && !running ? 'pointer' : 'not-allowed', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: 6 }}>
-            {running ? <><div style={{ width: 12, height: 12, border: '2px solid #07080f30', borderTop: '2px solid #07080f', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Running...</> : '▶ Run & Check'}
+            {running ? <><span style={{ width: 12, height: 12, border: '2px solid #07080f30', borderTop: '2px solid #07080f', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} />Running...</> : '▶ Run & Check'}
           </button>
         </div>
       )}
 
-      {/* Result */}
       {result && (
         <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: result.passed ? '#34d39910' : '#f8717110', border: `1px solid ${result.passed ? '#34d39930' : '#f8717130'}` }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: result.passed ? '#34d399' : '#f87171', marginBottom: result.output ? 6 : 0 }}>
-            {result.passed ? '✓ Correct! All test cases passed.' : '✗ Output does not match. Try again.'}
+            {result.passed ? '✓ Correct! Test passed.' : '✗ Wrong output. Try again.'}
           </div>
-          {result.output && (
+          {result.output && !result.passed && (
             <div>
               <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>Your output:</div>
               <pre style={{ fontSize: 12, color: '#94a3b8', margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>{result.output}</pre>
-            </div>
-          )}
-          {!result.passed && (
-            <div style={{ marginTop: 8 }}>
-              <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>Expected:</div>
+              <div style={{ fontSize: 10, color: '#475569', marginBottom: 4, marginTop: 8 }}>Expected:</div>
               <pre style={{ fontSize: 12, color: '#34d399', margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>{problem.expectedOutput}</pre>
             </div>
           )}
@@ -677,30 +1009,25 @@ function CodeProblemBlock({
   );
 }
 
+// ─── Topic Learn Modal ────────────────────────────────────────────────────────
+
 function TopicLearnModal({
-  topic, stageTitle, stageColor, onClose, onComplete,
+  topic, stageColor, onClose, onComplete,
 }: {
-  topic: string; stageTitle: string; stageColor: string;
-  onClose: () => void; onComplete: () => void;
+  topic: string; stageColor: string; onClose: () => void; onComplete: () => void;
 }) {
   const content = STAGE01_CONTENT[topic] || null;
-  const [passedProblems, setPassedProblems] = useState<boolean[]>([false, false, false]);
+  const [passedProblems, setPassedProblems] = useState([false, false, false]);
   const [showCode, setShowCode] = useState(false);
   const allPassed = passedProblems.every(Boolean);
-
-  const handlePass = (idx: number) => {
-    const next = [...passedProblems];
-    next[idx] = true;
-    setPassedProblems(next);
-  };
 
   if (!content) {
     return (
       <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={e => e.target === e.currentTarget && onClose()}>
-        <div style={{ background: '#0c0d17', border: `1px solid ${stageColor}40`, borderRadius: 16, width: '100%', maxWidth: 580, padding: 32, textAlign: 'center' }}>
-          <div style={{ fontSize: 32, marginBottom: 16 }}>🚧</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', marginBottom: 8 }}>Coming Soon</div>
-          <div style={{ fontSize: 14, color: '#475569', marginBottom: 20 }}>Practice problems for this topic are being prepared. Check back soon!</div>
+        <div style={{ background: '#0c0d17', border: `1px solid ${stageColor}40`, borderRadius: 16, width: '100%', maxWidth: 520, padding: 32, textAlign: 'center' }}>
+          <div style={{ fontSize: 36, marginBottom: 14 }}>🚧</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', marginBottom: 8 }}>Content Coming Soon</div>
+          <div style={{ fontSize: 14, color: '#475569', marginBottom: 20 }}>Practice problems for this topic are being prepared.</div>
           <button onClick={onClose} style={{ background: stageColor, border: 'none', color: '#07080f', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 14, fontFamily: 'Inter, sans-serif' }}>Close</button>
         </div>
       </div>
@@ -708,58 +1035,56 @@ function TopicLearnModal({
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: '#0c0d17', border: `1px solid ${stageColor}40`, borderRadius: 16, width: '100%', maxWidth: 680, maxHeight: '92vh', overflowY: 'auto', padding: 28 }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: '#0c0d17', border: `1px solid ${stageColor}40`, borderRadius: 16, width: '100%', maxWidth: 700, maxHeight: '92vh', overflowY: 'auto', padding: 28 }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
           <div>
             <div style={{ fontSize: 10, color: stageColor, letterSpacing: '0.14em', fontWeight: 700, marginBottom: 6 }}>LEARN THIS TOPIC</div>
             <div style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', lineHeight: 1.4, maxWidth: 520 }}>{topic}</div>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#475569', fontSize: 22, cursor: 'pointer', lineHeight: 1, padding: '0 4px', flexShrink: 0 }}>×</button>
-        </div>
-
-        {/* Progress pills */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-          {[0, 1, 2].map(i => (
-            <div key={i} style={{ flex: 1, height: 4, borderRadius: 99, background: passedProblems[i] ? '#34d399' : '#1e2030', transition: 'background 0.3s' }} />
-          ))}
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#475569', fontSize: 22, cursor: 'pointer', flexShrink: 0, lineHeight: 1 }}>×</button>
         </div>
 
         {/* Explanation */}
-        <div style={{ background: stageColor + '08', border: `1px solid ${stageColor}20`, borderLeft: `3px solid ${stageColor}`, borderRadius: 8, padding: '14px 16px', marginBottom: 6 }}>
-          <div style={{ fontSize: 11, color: stageColor, letterSpacing: '0.12em', fontWeight: 700, marginBottom: 10 }}>EXPLANATION</div>
-          <pre style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.85, whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'Inter, sans-serif' }}>{content.explanation}</pre>
+        <div style={{ background: stageColor + '08', border: `1px solid ${stageColor}20`, borderLeft: `3px solid ${stageColor}`, borderRadius: 8, padding: '14px 16px', marginBottom: 16 }}>
+          <div style={{ fontSize: 11, color: stageColor, letterSpacing: '0.12em', marginBottom: 10, fontWeight: 600 }}>EXPLANATION</div>
+          <pre style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.8, whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'Inter, sans-serif' }}>{content.explanation}</pre>
         </div>
 
-        {/* Code example toggle */}
-        <button onClick={() => setShowCode(s => !s)} style={{ background: 'transparent', border: 'none', color: stageColor, fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: '10px 0', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: 6 }}>
-          {showCode ? '▾' : '▸'} {showCode ? 'Hide' : 'Show'} Code Example
-        </button>
-        {showCode && (
-          <div style={{ background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '14px 16px', marginBottom: 18 }}>
-            <pre style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.7, whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'monospace' }}>{content.codeExample}</pre>
-          </div>
-        )}
-
-        {/* Problems */}
-        <div style={{ fontSize: 11, color: '#475569', letterSpacing: '0.12em', fontWeight: 600, marginBottom: 14, marginTop: showCode ? 4 : 14 }}>
-          CODING CHALLENGES — solve all 3 to complete this topic
+        {/* Code Example */}
+        <div style={{ marginBottom: 24 }}>
+          <button onClick={() => setShowCode(!showCode)} style={{ background: 'transparent', border: `1px solid ${stageColor}40`, color: stageColor, fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 6, cursor: 'pointer', letterSpacing: '0.08em', fontFamily: 'Inter, sans-serif' }}>
+            {showCode ? '▼ HIDE CODE EXAMPLE' : '▶ SHOW CODE EXAMPLE'}
+          </button>
+          {showCode && (
+            <div style={{ marginTop: 10, background: '#07080f', border: `1px solid ${stageColor}20`, borderRadius: 8, padding: '14px 16px' }}>
+              <pre style={{ fontSize: 13, color: '#a5b4fc', lineHeight: 1.7, whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'monospace' }}>{content.codeExample}</pre>
+            </div>
+          )}
         </div>
-        <div style={{ fontSize: 12, color: '#374151', marginBottom: 16, lineHeight: 1.6 }}>
-          Write your solution in VS Code, then upload the <code style={{ color: stageColor, background: stageColor + '15', padding: '1px 5px', borderRadius: 4 }}>.py</code> file here. We'll run it with test inputs and check the output automatically.
+
+        {/* Progress */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+          {passedProblems.map((p, i) => (
+            <div key={i} style={{ flex: 1, height: 4, borderRadius: 99, background: p ? '#34d399' : '#1e2030', transition: 'background 0.3s' }} />
+          ))}
+        </div>
+
+        <div style={{ fontSize: 11, color: '#475569', letterSpacing: '0.1em', fontWeight: 600, marginBottom: 16 }}>
+          PRACTICE PROBLEMS — Write each solution in VS Code, upload the .py file to verify
         </div>
 
         {content.problems.map((p, i) => (
-          <CodeProblemBlock key={p.id} problem={p} color={stageColor} index={i} onPass={() => handlePass(i)} />
+          <CodeProblemBlock key={p.id} problem={p} color={stageColor} index={i}
+            onPass={() => setPassedProblems(prev => { const n = [...prev]; n[i] = true; return n; })} />
         ))}
 
-        {/* Complete button */}
         {allPassed && (
           <div style={{ marginTop: 8, padding: '20px', borderRadius: 12, background: '#34d39910', border: '1px solid #34d39940', textAlign: 'center' }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>🎉</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#34d399', marginBottom: 12 }}>All 3 problems solved!</div>
-            <button onClick={onComplete} style={{ background: '#34d399', border: 'none', color: '#07080f', padding: '12px 28px', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 15, fontFamily: 'Inter, sans-serif' }}>
+            <div style={{ fontSize: 24, marginBottom: 8 }}>🎉</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#34d399', marginBottom: 12 }}>All 3 problems solved!</div>
+            <button onClick={onComplete} style={{ background: '#34d399', border: 'none', color: '#07080f', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 14, fontFamily: 'Inter, sans-serif' }}>
               Mark Topic Complete ✓
             </button>
           </div>
@@ -769,65 +1094,58 @@ function TopicLearnModal({
   );
 }
 
-
-// ─── Stage Quiz Modal ────────────────────────────────────────────────────────
+// ─── Stage Quiz Modal ─────────────────────────────────────────────────────────
 
 function StageQuizModal({
   stage, onClose, onPass,
 }: {
   stage: typeof stages[0]; onClose: () => void; onPass: () => void;
 }) {
-  const isStage01 = stage.number === '01';
-  const problems = isStage01 ? STAGE01_FINAL_PROBLEMS : [];
-  const [passedProblems, setPassedProblems] = useState<boolean[]>(Array(problems.length).fill(false));
-  const passedCount = passedProblems.filter(Boolean).length;
-  const allPassed = passedCount >= 5 && passedProblems.every(Boolean);
-
-  const handlePass = (idx: number) => {
-    const next = [...passedProblems];
-    next[idx] = true;
-    setPassedProblems(next);
-  };
+  const problems = stage.number === '01' ? STAGE01_FINAL_PROBLEMS : [];
+  const [passed, setPassed] = useState<boolean[]>(Array(problems.length).fill(false));
+  const allPassed = problems.length > 0 && passed.every(Boolean);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-      onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: '#0c0d17', border: `1px solid ${stage.color}50`, borderRadius: 16, width: '100%', maxWidth: 700, maxHeight: '92vh', overflowY: 'auto', padding: 28 }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: '#0c0d17', border: `1px solid ${stage.color}50`, borderRadius: 16, width: '100%', maxWidth: 720, maxHeight: '92vh', overflowY: 'auto', padding: 28 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
           <div>
             <div style={{ fontSize: 10, color: stage.color, letterSpacing: '0.14em', fontWeight: 700, marginBottom: 6 }}>STAGE COMPLETION CHALLENGE</div>
             <div style={{ fontSize: 18, fontWeight: 700, color: '#e2e8f0' }}>{stage.title}</div>
-            <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>Solve all 5 problems to complete this stage</div>
+            <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>Pass all 5 problems to complete this stage</div>
           </div>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#475569', fontSize: 22, cursor: 'pointer' }}>×</button>
         </div>
 
-        {/* Progress bar */}
+        {/* Progress */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
-          {problems.map((_, i) => (
-            <div key={i} style={{ flex: 1, height: 5, borderRadius: 99, background: passedProblems[i] ? '#34d399' : '#1e2030', transition: 'background 0.3s' }} />
-          ))}
+          {problems.length > 0 ? problems.map((_, i) => (
+            <div key={i} style={{ flex: 1, height: 5, borderRadius: 99, background: passed[i] ? '#34d399' : '#1e2030', transition: 'background 0.3s' }} />
+          )) : [1,2,3,4,5].map(i => <div key={i} style={{ flex: 1, height: 5, borderRadius: 99, background: '#1e2030' }} />)}
         </div>
 
-        {!isStage01 && (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: '#475569', fontSize: 14 }}>
-            🚧 Stage challenges coming soon!
+        {problems.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px 0', color: '#475569', fontSize: 14 }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>🚧</div>
+            Stage challenges for this stage are coming soon!
           </div>
+        ) : (
+          <>
+            <div style={{ fontSize: 12, color: '#374151', marginBottom: 20, lineHeight: 1.7 }}>
+              Write each solution in VS Code, then upload the <code style={{ color: stage.color, background: stage.color + '15', padding: '1px 5px', borderRadius: 4 }}>.py</code> file. Your code runs against a hidden test input — the output must match exactly.
+            </div>
+            {problems.map((p, i) => (
+              <CodeProblemBlock key={p.id} problem={p} color={stage.color} index={i}
+                onPass={() => setPassed(prev => { const n = [...prev]; n[i] = true; return n; })} />
+            ))}
+          </>
         )}
 
-        <div style={{ fontSize: 12, color: '#374151', marginBottom: 18, lineHeight: 1.6 }}>
-          Write each solution in VS Code, then upload the <code style={{ color: stage.color, background: stage.color + '15', padding: '1px 5px', borderRadius: 4 }}>.py</code> file. We'll run it with hidden test inputs and verify the output.
-        </div>
-
-        {problems.map((p, i) => (
-          <CodeProblemBlock key={p.id} problem={p} color={stage.color} index={i} onPass={() => handlePass(i)} />
-        ))}
-
         {allPassed && (
-          <div style={{ marginTop: 16, padding: '24px', borderRadius: 12, background: '#34d39910', border: '1px solid #34d39940', textAlign: 'center' }}>
-            <div style={{ fontSize: 36, marginBottom: 10 }}>🏆</div>
+          <div style={{ marginTop: 16, padding: '28px', borderRadius: 12, background: '#34d39910', border: '1px solid #34d39940', textAlign: 'center' }}>
+            <div style={{ fontSize: 40, marginBottom: 10 }}>🏆</div>
             <div style={{ fontSize: 20, fontWeight: 800, color: '#34d399', marginBottom: 8 }}>Stage Complete!</div>
-            <div style={{ fontSize: 14, color: '#475569', marginBottom: 20 }}>You solved all 5 challenges. Stage {stage.number} is mastered.</div>
+            <div style={{ fontSize: 14, color: '#475569', marginBottom: 20 }}>You passed all 5 challenges. Stage {stage.number} is mastered.</div>
             <button onClick={onPass} style={{ background: '#34d399', border: 'none', color: '#07080f', padding: '14px 32px', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 16, fontFamily: 'Inter, sans-serif' }}>
               Complete Stage 🎉
             </button>
@@ -921,7 +1239,7 @@ function ResetPasswordScreen() {
   );
 }
 
-// ─── Auth Screen ────────────────────────────────────────────────────────────
+// ─── Auth Screen ──────────────────────────────────────────────────────────────
 
 function AuthScreen({ onAuth }: { onAuth: () => void }) {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -1027,7 +1345,7 @@ function AuthScreen({ onAuth }: { onAuth: () => void }) {
   );
 }
 
-// ─── Main Roadmap ────────────────────────────────────────────────────────────
+// ─── Main Roadmap ─────────────────────────────────────────────────────────────
 
 export default function Roadmap() {
   const [user, setUser] = useState<any>(null);
@@ -1043,10 +1361,8 @@ export default function Roadmap() {
   const [celebration, setCelebration] = useState<string | null>(null);
   const [allExpanded, setAllExpanded] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null);
-
-  // AI modal state
   const [learnModal, setLearnModal] = useState<{ stageNum: string; topicIdx: number } | null>(null);
-  const [quizModal, setQuizModal] = useState<string | null>(null); // stageNum
+  const [quizModal, setQuizModal] = useState<string | null>(null);
 
   const stageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1074,7 +1390,9 @@ export default function Roadmap() {
         const yesterday = new Date(Date.now() - 86400000).toDateString();
         if (data.last_active !== today) {
           const newStreak = data.last_active === yesterday ? (data.streak || 0) + 1 : 1;
-          setStreak(newStreak); setLastActive(today);
+          setStreak(newStreak);
+          setLastActive(today);
+          saveToSupabase({ streak: newStreak, last_active: today });
         }
       }
     })();
@@ -1087,9 +1405,14 @@ export default function Roadmap() {
     saveTimer.current = setTimeout(async () => {
       const today = new Date().toDateString();
       const { error } = await supabase.from('progress').upsert({
-        user_id: user.id, completed_topics: completedTopics, completed_stages: completedStages,
-        current_stage: currentStage, notes, streak, last_active: today,
-        updated_at: new Date().toISOString(), ...updates,
+        user_id: user.id,
+        completed_topics: completedTopics,
+        completed_stages: completedStages,
+        current_stage: currentStage,
+        notes, streak,
+        last_active: today,
+        updated_at: new Date().toISOString(),
+        ...updates,
       }, { onConflict: 'user_id' });
       setSaveStatus(error ? 'error' : 'saved');
       setTimeout(() => setSaveStatus(null), 2000);
@@ -1101,21 +1424,22 @@ export default function Roadmap() {
   const saveNote = (num: string, val: string) => { const n = { ...notes, [num]: val }; setNotes(n); saveToSupabase({ notes: n }); };
   const saveCurrent = (num: string | null) => { setCurrentStage(num); saveToSupabase({ current_stage: num }); };
 
+  // Mark a topic as done (from learn modal — only sets to true, never toggles)
   const completeTopic = (stageNum: string, idx: number, totalTopics: number) => {
     const prev = completedTopics[stageNum] || Array(totalTopics).fill(false);
+    if (prev[idx]) { setLearnModal(null); return; }
     const next = [...prev];
     next[idx] = true;
-    const updated = { ...completedTopics, [stageNum]: next };
-    saveTopics(updated);
+    saveTopics({ ...completedTopics, [stageNum]: next });
     setLearnModal(null);
   };
 
+  // Toggle topic manually (checkbox)
   const toggleTopic = (stageNum: string, idx: number, totalTopics: number) => {
     const prev = completedTopics[stageNum] || Array(totalTopics).fill(false);
     const next = [...prev];
     next[idx] = !next[idx];
-    const updated = { ...completedTopics, [stageNum]: next };
-    saveTopics(updated);
+    saveTopics({ ...completedTopics, [stageNum]: next });
   };
 
   const toggleStage = (stageNum: string) => {
@@ -1130,8 +1454,7 @@ export default function Roadmap() {
 
   const completeStageFromQuiz = (stageNum: string) => {
     if (!completedStages.includes(stageNum)) {
-      const newStages = [...completedStages, stageNum];
-      saveStages(newStages);
+      saveStages([...completedStages, stageNum]);
       setCelebration(stageNum);
       setTimeout(() => setCelebration(null), 4000);
     }
@@ -1155,7 +1478,6 @@ export default function Roadmap() {
 
   const tags = ['ALL', 'FOUNDATION', 'LANGUAGE', 'TOOLS', 'APIs', 'DATA', 'PERFORMANCE', 'DEPLOYMENT', 'WEB', 'AI CORE', 'INTEGRATIONS', 'STORAGE', 'NO-CODE+', 'SYSTEMS', 'PORTFOLIO', 'BUSINESS'];
   const filtered = filter === 'ALL' ? stages : stages.filter(s => s.tag === filter);
-
   const tagColors: Record<string, string> = {
     FOUNDATION: '#818cf8', LANGUAGE: '#60a5fa', TOOLS: '#38bdf8', APIs: '#22d3ee',
     DATA: '#34d399', PERFORMANCE: '#a3e635', DEPLOYMENT: '#fbbf24', WEB: '#fb923c',
@@ -1168,7 +1490,6 @@ export default function Roadmap() {
     if (currentStage === num) return 'active';
     return 'idle';
   };
-
   const isOpen = (num: string) => allExpanded || open === num;
 
   const handleLogout = async () => {
@@ -1177,11 +1498,15 @@ export default function Roadmap() {
     setNotes({}); setStreak(0); setLastActive(null);
   };
 
-  if (authLoading) return <div style={{ fontFamily: 'Inter, sans-serif', background: '#07080f', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ fontSize: 14, color: '#475569' }}>Loading...</div></div>;
+  if (authLoading) return (
+    <div style={{ fontFamily: 'Inter, sans-serif', background: '#07080f', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontSize: 14, color: '#475569' }}>Loading...</div>
+    </div>
+  );
+
   if (window.location.hash.includes('type=recovery')) return <ResetPasswordScreen />;
   if (!user) return <AuthScreen onAuth={() => {}} />;
 
-  // Find learn modal data
   const learnStage = learnModal ? stages.find(s => s.number === learnModal.stageNum) : null;
   const quizStage = quizModal ? stages.find(s => s.number === quizModal) : null;
 
@@ -1199,7 +1524,7 @@ export default function Roadmap() {
         .topic-row:hover { background: rgba(255,255,255,0.02); border-radius: 6px; }
         .check-box { transition: all 0.15s ease; cursor: pointer; flex-shrink: 0; }
         .check-box:hover { transform: scale(1.1); }
-        .learn-btn:hover { opacity: 0.85; }
+        .learn-btn:hover { opacity: 0.8; transform: translateY(-1px); }
         textarea { resize: vertical; font-family: 'Inter', sans-serif; }
         textarea:focus { outline: none; }
         .expand-arrow { transition: transform 0.2s ease; display: inline-block; }
@@ -1220,7 +1545,6 @@ export default function Roadmap() {
       {learnModal && learnStage && (
         <TopicLearnModal
           topic={learnStage.topics[learnModal.topicIdx]}
-          stageTitle={learnStage.title}
           stageColor={learnStage.color}
           onClose={() => setLearnModal(null)}
           onComplete={() => completeTopic(learnModal.stageNum, learnModal.topicIdx, learnStage.topics.length)}
@@ -1257,7 +1581,7 @@ export default function Roadmap() {
         </div>
       </div>
 
-      {/* Celebration */}
+      {/* Celebration toast */}
       {celebration && (
         <div className="celeb" style={{ position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)', zIndex: 999, background: '#0c0d17', border: '1px solid #818cf8', borderRadius: 12, padding: '16px 24px', textAlign: 'center', maxWidth: 340, boxShadow: '0 0 40px #818cf840' }}>
           <div style={{ fontSize: 28, marginBottom: 6 }}>🎉</div>
@@ -1274,10 +1598,10 @@ export default function Roadmap() {
             FROM ZERO TO<br />FREELANCE AI ENGINEER
           </h1>
           <p style={{ marginTop: 16, color: '#64748b', fontSize: 15, lineHeight: 1.8, maxWidth: 580 }}>
-            15 stages. Click any topic to get an AI explanation + practice problems. Complete all topics, then take the stage quiz.
+            15 stages. Click ▶ Learn on any topic to study it and solve 3 problems. Complete all topics, then take the 5-problem stage quiz to finish.
           </p>
           <div className="header-stats" style={{ display: 'flex', gap: 28, marginTop: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-            {[['15', 'Total Stages'], [`${weeksLeft}w`, 'Weeks Left'], [`${streak}🔥`, 'Day Streak'], [completedStages.length > 0 ? `${completedStages.length}` : '0', 'Completed']].map(([num, label]) => (
+            {[['15', 'Total Stages'], [`${weeksLeft}w`, 'Weeks Left'], [`${streak}🔥`, 'Day Streak'], [`${completedStages.length}`, 'Completed']].map(([num, label]) => (
               <div key={label}>
                 <div style={{ fontSize: 24, fontWeight: 800, color: '#818cf8' }}>{num}</div>
                 <div style={{ fontSize: 12, color: '#374151', marginTop: 2, fontWeight: 500 }}>{label}</div>
@@ -1315,7 +1639,7 @@ export default function Roadmap() {
           ))}
         </div>
 
-        {/* Stages */}
+        {/* Stage list */}
         {filter === 'ALL' ? (
           STAGE_GROUPS.map(group => {
             const groupStages = stages.filter(s => group.range.includes(s.number));
@@ -1346,7 +1670,7 @@ export default function Roadmap() {
 
         <div style={{ marginTop: 40, paddingTop: 20, borderTop: '1px solid #1a1d2e', textAlign: 'center' }}>
           <div style={{ fontSize: 12, color: '#1e2030', letterSpacing: '0.1em', fontWeight: 500 }}>
-            CLICK ANY TOPIC TO LEARN · COMPLETE ALL TOPICS · TAKE THE STAGE QUIZ TO FINISH
+            CLICK ▶ LEARN ON ANY TOPIC · SOLVE 3 PROBLEMS · COMPLETE ALL TOPICS · TAKE THE STAGE QUIZ
           </div>
         </div>
       </div>
@@ -1360,6 +1684,8 @@ export default function Roadmap() {
     const stageOpen = isOpen(stage.number);
     const topicsState = completedTopics[stage.number] || Array(stage.topics.length).fill(false);
     const allTopicsDone = stage.topics.length > 0 && topicsState.every(Boolean);
+    const hasLearnContent = stage.number === '01';
+    const hasQuiz = stage.number === '01';
 
     const borderColor = status === 'done' ? '#34d399' : status === 'active' ? stage.color : '#1e2030';
     const bgColor = status === 'done' ? '#0a1a12' : status === 'active' ? '#0d0d1f' : '#0c0d17';
@@ -1369,6 +1695,7 @@ export default function Roadmap() {
         className="stage-card"
         style={{ background: bgColor, borderRadius: 12, overflow: 'hidden', border: `1px solid ${borderColor}` }}>
 
+        {/* Stage header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '18px 20px', cursor: 'pointer' }}
           onClick={() => { if (!allExpanded) setOpen(stageOpen && !allExpanded ? null : stage.number); }}>
           <div style={{ fontSize: 18, fontWeight: 800, color: stage.color, minWidth: 32, lineHeight: 1, opacity: status === 'done' ? 1 : 0.6 }}>{stage.number}</div>
@@ -1421,11 +1748,12 @@ export default function Roadmap() {
 
             {stage.topics.length > 0 && (
               <div style={{ marginBottom: 22 }}>
-                <div style={{ fontSize: 11, color: '#475569', letterSpacing: '0.12em', marginBottom: 12, fontWeight: 600 }}>TOPICS TO MASTER — click a topic to learn it with AI</div>
+                <div style={{ fontSize: 11, color: '#475569', letterSpacing: '0.12em', marginBottom: 12, fontWeight: 600 }}>
+                  TOPICS TO MASTER {hasLearnContent ? '— click ▶ Learn to study each topic' : '— check off topics as you complete them'}
+                </div>
                 <div className="topic-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: 6 }}>
                   {stage.topics.map((t, idx) => (
-                    <div key={idx} className="topic-row"
-                      style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '6px 4px' }}>
+                    <div key={idx} className="topic-row" style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '6px 4px' }}>
                       <div className="check-box" onClick={() => toggleTopic(stage.number, idx, stage.topics.length)}
                         style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${topicsState[idx] ? stage.color : '#2d3050'}`, background: topicsState[idx] ? stage.color + '25' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: stage.color, marginTop: 2, flexShrink: 0 }}>
                         {topicsState[idx] ? '✓' : ''}
@@ -1434,10 +1762,12 @@ export default function Roadmap() {
                         <span style={{ fontSize: 11, color: stage.color, opacity: 0.5, minWidth: 20, fontWeight: 600, marginTop: 2 }}>{String(idx + 1).padStart(2, '0')}</span>
                         <span style={{ fontSize: 14, color: topicsState[idx] ? '#374151' : '#cbd5e1', lineHeight: 1.6, textDecoration: topicsState[idx] ? 'line-through' : 'none', textDecorationColor: '#374151', flex: 1 }}>{t}</span>
                       </div>
-                      <button className="learn-btn" onClick={() => setLearnModal({ stageNum: stage.number, topicIdx: idx })}
-                        style={{ background: topicsState[idx] ? '#1a1d2e' : stage.color + '20', border: `1px solid ${topicsState[idx] ? '#1e2030' : stage.color + '50'}`, color: topicsState[idx] ? '#374151' : stage.color, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, marginTop: 2 }}>
-                        {topicsState[idx] ? '✓ Done' : '▶ Learn'}
-                      </button>
+                      {hasLearnContent && (
+                        <button className="learn-btn" onClick={() => setLearnModal({ stageNum: stage.number, topicIdx: idx })}
+                          style={{ background: topicsState[idx] ? '#1a1d2e' : stage.color + '20', border: `1px solid ${topicsState[idx] ? '#1e2030' : stage.color + '50'}`, color: topicsState[idx] ? '#374151' : stage.color, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 5, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, marginTop: 2, transition: 'all 0.15s', fontFamily: 'Inter, sans-serif' }}>
+                          {topicsState[idx] ? '✓ Done' : '▶ Learn'}
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1445,17 +1775,17 @@ export default function Roadmap() {
             )}
 
             {/* Stage Quiz CTA */}
-            {stage.topics.length > 0 && status !== 'done' && (
+            {hasQuiz && status !== 'done' && (
               <div style={{ margin: '16px 0', padding: '14px 16px', borderRadius: 10, background: allTopicsDone ? stage.color + '12' : '#07080f', border: `1px solid ${allTopicsDone ? stage.color + '40' : '#1e2030'}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 700, color: allTopicsDone ? stage.color : '#374151', marginBottom: 2 }}>
-                    {allTopicsDone ? '🎯 All topics complete! Take the stage quiz.' : `Complete all ${stage.topics.length} topics to unlock the stage quiz`}
+                    {allTopicsDone ? '🎯 All topics done! Take the stage quiz to complete.' : `Complete all ${stage.topics.length} topics to unlock the final quiz`}
                   </div>
-                  <div style={{ fontSize: 11, color: '#374151' }}>Score 4/5 to finish the stage</div>
+                  <div style={{ fontSize: 11, color: '#374151' }}>Pass all 5 problems to finish the stage</div>
                 </div>
                 <button onClick={() => allTopicsDone && setQuizModal(stage.number)} disabled={!allTopicsDone}
-                  style={{ background: allTopicsDone ? `linear-gradient(135deg, ${stage.color}, #818cf8)` : '#1e2030', border: 'none', color: allTopicsDone ? '#07080f' : '#374151', fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 8, cursor: allTopicsDone ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
-                  {allTopicsDone ? 'Take Quiz →' : `${topicsDone}/${stage.topics.length} done`}
+                  style={{ background: allTopicsDone ? `linear-gradient(135deg, ${stage.color}, #818cf8)` : '#1e2030', border: 'none', color: allTopicsDone ? '#07080f' : '#374151', fontSize: 12, fontWeight: 700, padding: '10px 20px', borderRadius: 8, cursor: allTopicsDone ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', transition: 'all 0.2s', fontFamily: 'Inter, sans-serif' }}>
+                  {allTopicsDone ? 'Take Stage Quiz →' : `${topicsDone}/${stage.topics.length} done`}
                 </button>
               </div>
             )}
