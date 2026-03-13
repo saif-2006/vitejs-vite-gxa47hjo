@@ -384,34 +384,297 @@ const stages = [
 
 const TOTAL_WEEKS = stages.reduce((sum, s) => sum + s.weeks, 0);
 
-// ─── AI API Call ─────────────────────────────────────────────────────────────
+// ─── Piston Code Runner ──────────────────────────────────────────────────────
 
-async function callClaude(prompt: string): Promise<string> {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  });
-  const data = await response.json();
-  return data.content?.map((b: any) => b.text || '').join('') || '';
+async function runCode(code: string, stdin: string): Promise<{ output: string; error: string }> {
+  try {
+    const res = await fetch('https://emkc.org/api/v2/piston/execute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        language: 'python',
+        version: '3.10.0',
+        files: [{ name: 'solution.py', content: code }],
+        stdin,
+        run_timeout: 5000,
+      }),
+    });
+    const data = await res.json();
+    return {
+      output: (data.run?.stdout || '').trim(),
+      error: (data.run?.stderr || '').trim(),
+    };
+  } catch {
+    return { output: '', error: 'Network error — could not connect to code runner.' };
+  }
 }
 
-// ─── Topic Learn Modal ───────────────────────────────────────────────────────
+// ─── Stage 01 Content ────────────────────────────────────────────────────────
 
-interface Problem {
-  question: string;
-  options: string[];
-  correct: number;
-  explanation: string;
+interface CodingProblem {
+  id: string;
+  title: string;
+  description: string;
+  inputSpec: string;
+  outputSpec: string;
+  example: { input: string; output: string };
+  testInput: string;
+  expectedOutput: string;
 }
 
 interface TopicContent {
   explanation: string;
-  problems: Problem[];
+  codeExample: string;
+  problems: CodingProblem[];
+}
+
+const STAGE01_CONTENT: Record<string, TopicContent> = {
+  'Variables, strings (f-strings), numbers (int, float), booleans': {
+    explanation: `In Python, variables store data. You don't declare types — Python figures it out.\n\n• Strings (str): text in quotes — "hello"\n• Integers (int): whole numbers — 42\n• Floats (float): decimals — 3.14\n• Booleans (bool): True or False\n\nf-strings embed variables inside strings with curly braces:\n  name = "Alice"\n  print(f"Hello, {name}!")  →  Hello, Alice!\n\nYou can do math inside f-strings too: f"Next year: {age + 1}"`,
+    codeExample: `name = "Alice"\nage = 25\nheight = 5.6\nis_student = True\n\nprint(f"Name: {name}")\nprint(f"Age: {age}")\nprint(f"Height: {height}")\nprint(f"Is student: {is_student}")\nprint(f"Next year: {age + 1}")`,
+    problems: [
+      { id: 's01t00p0', title: 'Personal Info Card', description: 'Ask the user for their name and age. Print a sentence using an f-string.', inputSpec: 'Line 1: a name\nLine 2: an age (integer)', outputSpec: '"My name is {name} and I am {age} years old."', example: { input: 'Alice\n25', output: 'My name is Alice and I am 25 years old.' }, testInput: 'Jordan\n19', expectedOutput: 'My name is Jordan and I am 19 years old.' },
+      { id: 's01t00p1', title: 'Next Year Calculator', description: 'Ask for name and age. Print how old they will be next year.', inputSpec: 'Line 1: name\nLine 2: current age (integer)', outputSpec: '"{name} will be {age+1} next year."', example: { input: 'Bob\n30', output: 'Bob will be 31 next year.' }, testInput: 'Sara\n17', expectedOutput: 'Sara will be 18 next year.' },
+      { id: 's01t00p2', title: 'Price Tag', description: 'Ask for a product name and price (float). Print a price tag formatted to 2 decimal places.', inputSpec: 'Line 1: product name\nLine 2: price (float)', outputSpec: '"{product} costs ${price:.2f}"', example: { input: 'Apple\n0.5', output: 'Apple costs $0.50' }, testInput: 'Laptop\n999.9', expectedOutput: 'Laptop costs $999.90' },
+    ],
+  },
+  'Lists, dictionaries, sets, tuples — and when to use each': {
+    explanation: `Python has 4 main collection types:\n\n• List [] — ordered, changeable, allows duplicates. Use for sequences.\n  fruits = ["apple", "banana", "cherry"]\n\n• Dictionary {} — key-value pairs. Use for lookup by name.\n  person = {"name": "Alice", "age": 25}\n\n• Set {} — unordered, NO duplicates. Use for unique items.\n  unique = {1, 2, 2, 3}  →  {1, 2, 3}\n\n• Tuple () — ordered, UNCHANGEABLE. Use for fixed data.\n  point = (10.5, 20.3)\n\nRule of thumb: sequences→list, lookup→dict, unique→set, fixed→tuple`,
+    codeExample: `fruits = ["apple", "banana", "cherry"]\nfruits.append("mango")\nprint(fruits[0])  # apple\n\nperson = {"name": "Alice", "age": 25}\nprint(person["name"])  # Alice\n\nnums = {1, 2, 3, 2, 1}\nprint(nums)  # {1, 2, 3}\n\npoint = (10, 20)\nprint(point[0])  # 10`,
+    problems: [
+      { id: 's01t01p0', title: 'Shopping List', description: 'Ask for 3 items (one per line). Store in a list and print the list, then print the second item.', inputSpec: '3 lines, each containing one item name', outputSpec: 'Line 1: the full list\nLine 2: the second item', example: { input: 'apple\nbanana\ncherry', output: "['apple', 'banana', 'cherry']\nbanana" }, testInput: 'milk\neggs\nbread', expectedOutput: "['milk', 'eggs', 'bread']\neggs" },
+      { id: 's01t01p1', title: 'Person Dictionary', description: 'Ask for name, age, and city. Store in a dict and print each value with its label.', inputSpec: 'Line 1: name\nLine 2: age\nLine 3: city', outputSpec: 'Name: {name}\nAge: {age}\nCity: {city}', example: { input: 'Alice\n25\nLondon', output: 'Name: Alice\nAge: 25\nCity: London' }, testInput: 'Marcus\n32\nTokyo', expectedOutput: 'Name: Marcus\nAge: 32\nCity: Tokyo' },
+      { id: 's01t01p2', title: 'Unique Numbers', description: 'Ask for 5 numbers (one per line, some may repeat). Store in a set and print the count of unique values.', inputSpec: '5 lines each with an integer', outputSpec: '"Unique count: {n}"', example: { input: '1\n2\n2\n3\n1', output: 'Unique count: 3' }, testInput: '5\n5\n5\n10\n10', expectedOutput: 'Unique count: 2' },
+    ],
+  },
+  'Indexing, slicing, unpacking': {
+    explanation: `Indexing accesses specific elements. Python uses zero-based indexing (first item = index 0).\nNegative indexing counts from the end: -1 is the last item.\n\n  fruits = ["apple", "banana", "cherry"]\n  fruits[0]   →  "apple"\n  fruits[-1]  →  "cherry"\n\nSlicing gets a portion: sequence[start:stop:step]\n  fruits[0:2]   →  ["apple", "banana"]  (stop is exclusive)\n  text[::-1]    →  reverses the string\n\nUnpacking assigns multiple variables at once:\n  a, b, c = [1, 2, 3]\n  first, *rest = [1, 2, 3, 4, 5]  →  first=1, rest=[2,3,4,5]`,
+    codeExample: `text = "Hello, World!"\nprint(text[0])      # H\nprint(text[-1])     # !\nprint(text[0:5])    # Hello\nprint(text[::-1])   # !dlroW ,olleH\n\nnums = [10, 20, 30, 40, 50]\nfirst, second, *rest = nums\nprint(first)   # 10\nprint(rest)    # [30, 40, 50]`,
+    problems: [
+      { id: 's01t02p0', title: 'First and Last', description: 'Ask for a word. Print the first letter, last letter, and the word reversed.', inputSpec: 'One line: a word', outputSpec: 'Line 1: first letter\nLine 2: last letter\nLine 3: word reversed', example: { input: 'Python', output: 'P\nn\nnohtyP' }, testInput: 'automation', expectedOutput: 'a\nn\nnoitamotua' },
+      { id: 's01t02p1', title: 'Middle Slice', description: 'Ask for a sentence. Print only characters from index 2 to index 8 (exclusive, so indices 2-7).', inputSpec: 'One line: a sentence (at least 8 characters)', outputSpec: 'One line: characters from index 2 to 7', example: { input: 'Hello World', output: 'llo Wo' }, testInput: 'Programming is fun', expectedOutput: 'ogrammi' },
+      { id: 's01t02p2', title: 'Unpack Three', description: 'Ask for 3 numbers on one line separated by spaces. Unpack them into a, b, c and print their sum.', inputSpec: 'One line: 3 integers separated by spaces', outputSpec: '"Sum: {a+b+c}"', example: { input: '10 20 30', output: 'Sum: 60' }, testInput: '7 14 21', expectedOutput: 'Sum: 42' },
+    ],
+  },
+  'if/elif/else, match/case': {
+    explanation: `Conditional statements let your code make decisions.\n\n  if condition:\n      # runs if True\n  elif another_condition:\n      # runs if first was False and this is True\n  else:\n      # runs if all conditions were False\n\nComparison operators: == != > < >= <=\nLogical operators: and, or, not\n\nPython 3.10+ has match/case (like switch in other languages):\n  match command:\n      case "quit":\n          print("Quitting")\n      case _:\n          print("Unknown")  # _ is the default\n\nImportant: use == for comparison, = for assignment.`,
+    codeExample: `score = 75\nif score >= 90:\n    print("Grade: A")\nelif score >= 80:\n    print("Grade: B")\nelif score >= 70:\n    print("Grade: C")\nelse:\n    print("Grade: F")\n\nday = "Monday"\nmatch day:\n    case "Saturday" | "Sunday":\n        print("Weekend!")\n    case _:\n        print("Weekday")`,
+    problems: [
+      { id: 's01t03p0', title: 'Grade Calculator', description: 'Ask for a score (0-100). Print the grade: A (90-100), B (80-89), C (70-79), D (60-69), F (below 60).', inputSpec: 'One line: an integer 0-100', outputSpec: '"Grade: X" where X is the letter', example: { input: '85', output: 'Grade: B' }, testInput: '72', expectedOutput: 'Grade: C' },
+      { id: 's01t03p1', title: 'Even or Odd', description: 'Ask for a number. Print "Even", "Odd", or "Zero" if the number is 0.', inputSpec: 'One line: an integer', outputSpec: '"Even", "Odd", or "Zero"', example: { input: '4', output: 'Even' }, testInput: '7', expectedOutput: 'Odd' },
+      { id: 's01t03p2', title: 'Season Finder', description: 'Ask for a month number (1-12). Print the season: Spring (3-5), Summer (6-8), Autumn (9-11), Winter (12,1,2).', inputSpec: 'One line: integer 1-12', outputSpec: 'The season name', example: { input: '7', output: 'Summer' }, testInput: '11', expectedOutput: 'Autumn' },
+    ],
+  },
+  'for loops, while loops, break, continue, enumerate, zip': {
+    explanation: `FOR loop — iterate over a sequence:\n  for item in ["a", "b", "c"]:\n      print(item)\n  for i in range(5):  # 0, 1, 2, 3, 4\n\nWHILE loop — repeat while condition is True:\n  count = 0\n  while count < 3:\n      count += 1\n\nbreak — exit the loop immediately\ncontinue — skip to the next iteration\n\nenumerate() — get index AND value at the same time:\n  for i, fruit in enumerate(["apple", "banana"]):\n      print(i, fruit)  # 0 apple, then 1 banana\n\nzip() — loop over two lists simultaneously:\n  for name, age in zip(["Alice", "Bob"], [25, 30]):\n      print(name, age)`,
+    codeExample: `fruits = ["apple", "banana", "cherry"]\nfor i, fruit in enumerate(fruits):\n    print(f"{i}: {fruit}")\n\nnames = ["Alice", "Bob"]\nscores = [95, 87]\nfor name, score in zip(names, scores):\n    print(f"{name}: {score}")\n\nfor n in range(10):\n    if n == 3: continue\n    if n == 7: break\n    print(n)`,
+    problems: [
+      { id: 's01t04p0', title: 'Multiplication Table', description: 'Ask for a number n. Print its multiplication table from 1 to 10.', inputSpec: 'One line: an integer n', outputSpec: '10 lines: "n x i = result"', example: { input: '3', output: '3 x 1 = 3\n3 x 2 = 6\n3 x 3 = 9\n3 x 4 = 12\n3 x 5 = 15\n3 x 6 = 18\n3 x 7 = 21\n3 x 8 = 24\n3 x 9 = 27\n3 x 10 = 30' }, testInput: '5', expectedOutput: '5 x 1 = 5\n5 x 2 = 10\n5 x 3 = 15\n5 x 4 = 20\n5 x 5 = 25\n5 x 6 = 30\n5 x 7 = 35\n5 x 8 = 40\n5 x 9 = 45\n5 x 10 = 50' },
+      { id: 's01t04p1', title: 'Sum Until Zero', description: 'Keep reading numbers until the user enters 0. Print the total sum (not including 0).', inputSpec: 'Multiple lines of integers, ending with 0', outputSpec: '"Total: {sum}"', example: { input: '5\n3\n2\n0', output: 'Total: 10' }, testInput: '10\n20\n30\n0', expectedOutput: 'Total: 60' },
+      { id: 's01t04p2', title: 'Numbered List', description: 'Ask for n then n item names. Print as a numbered list using enumerate starting at 1.', inputSpec: 'Line 1: n\nNext n lines: item names', outputSpec: 'n lines: "1. item"', example: { input: '3\napple\nbanana\ncherry', output: '1. apple\n2. banana\n3. cherry' }, testInput: '4\npython\njavascript\nrust\ngo', expectedOutput: '1. python\n2. javascript\n3. rust\n4. go' },
+    ],
+  },
+  'Functions: parameters, return values, *args, **kwargs, default values': {
+    explanation: `Functions group reusable code. Define with def, call by name.\n\n  def greet(name):           # name is a parameter\n      return f"Hello, {name}!"\n\n  result = greet("Alice")    # "Alice" is the argument\n\nDefault values — used when argument is not provided:\n  def greet(name, greeting="Hello"):\n      return f"{greeting}, {name}!"\n\n*args — any number of positional arguments (tuple):\n  def add(*numbers):\n      return sum(numbers)\n  add(1, 2, 3, 4)  # works!\n\n**kwargs — any number of keyword arguments (dict):\n  def show(**info):\n      for key, val in info.items():\n          print(f"{key}: {val}")\n  show(name="Alice", age=25)`,
+    codeExample: `def power(base, exponent=2):\n    return base ** exponent\n\nprint(power(3))      # 9\nprint(power(2, 10))  # 1024\n\ndef total(*nums):\n    return sum(nums)\n\nprint(total(1, 2, 3, 4, 5))  # 15\n\ndef profile(**info):\n    for k, v in info.items():\n        print(f"{k}: {v}")\n\nprofile(name="Alice", city="London")`,
+    problems: [
+      { id: 's01t05p0', title: 'Rectangle Area', description: 'Write area(width, height=10). Ask for width and height (type "default" to use default height of 10). Print the area.', inputSpec: 'Line 1: width (integer)\nLine 2: height (integer or "default")', outputSpec: '"Area: {result}"', example: { input: '5\n4', output: 'Area: 20' }, testInput: '6\ndefault', expectedOutput: 'Area: 60' },
+      { id: 's01t05p1', title: 'Sum of Many', description: 'Ask for numbers on one line separated by spaces. Use a *args function to compute and print their sum.', inputSpec: 'One line: integers separated by spaces', outputSpec: '"Sum: {total}"', example: { input: '1 2 3 4 5', output: 'Sum: 15' }, testInput: '10 20 30 40', expectedOutput: 'Sum: 100' },
+      { id: 's01t05p2', title: 'Greeting Function', description: 'Write greet(name, greeting="Hello", punctuation="!"). Ask for name, greeting word, and punctuation. Print the result.', inputSpec: 'Line 1: name\nLine 2: greeting word\nLine 3: punctuation', outputSpec: '"{greeting}, {name}{punctuation}"', example: { input: 'Alice\nHi\n?', output: 'Hi, Alice?' }, testInput: 'Marcus\nHey\n!!', expectedOutput: 'Hey, Marcus!!' },
+    ],
+  },
+  'List comprehensions and dict comprehensions — used in every real script': {
+    explanation: `Comprehensions create lists or dicts in one concise line — very Pythonic.\n\nList comprehension: [expression for item in iterable if condition]\n\n  # Old way:\n  squares = []\n  for n in range(5):\n      squares.append(n ** 2)\n\n  # Comprehension:\n  squares = [n ** 2 for n in range(5)]  →  [0, 1, 4, 9, 16]\n\nWith filter:\n  evens = [n for n in range(10) if n % 2 == 0]\n\nDict comprehension: {key: value for item in iterable}\n  lengths = {word: len(word) for word in ["hi", "hello"]}\n  →  {"hi": 2, "hello": 5}\n\nYou'll use these in almost every real automation script.`,
+    codeExample: `nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]\nevens = [n for n in nums if n % 2 == 0]\nsquares = [n**2 for n in nums]\nupper = [w.upper() for w in ["hello", "world"]]\n\nwords = ["python", "is", "awesome"]\nlengths = {w: len(w) for w in words}\nprint(lengths)`,
+    problems: [
+      { id: 's01t06p0', title: 'Squares List', description: 'Ask for n. Use a list comprehension to create squares from 1 to n. Print the list.', inputSpec: 'One line: integer n', outputSpec: 'The list of squares', example: { input: '5', output: '[1, 4, 9, 16, 25]' }, testInput: '7', expectedOutput: '[1, 4, 9, 16, 25, 36, 49]' },
+      { id: 's01t06p1', title: 'Filter Long Words', description: 'Ask for a sentence. Use a list comprehension to get only words longer than 4 characters. Print the filtered list.', inputSpec: 'One line: a sentence', outputSpec: 'List of words with more than 4 characters', example: { input: 'the quick brown fox jumps', output: "['quick', 'brown', 'jumps']" }, testInput: 'I love programming with python every day', expectedOutput: "['programming', 'python', 'every']" },
+      { id: 's01t06p2', title: 'Word Length Dict', description: 'Ask for a sentence. Use a dict comprehension mapping each word to its length. Print the dict.', inputSpec: 'One line: a sentence with unique words', outputSpec: 'The dictionary', example: { input: 'hello world python', output: "{'hello': 5, 'world': 5, 'python': 6}" }, testInput: 'code is fun', expectedOutput: "{'code': 4, 'is': 2, 'fun': 3}" },
+    ],
+  },
+  'Standard library: os, sys, datetime, json, re, pathlib': {
+    explanation: `Python's standard library handles almost everything — no installation needed.\n\nos — interact with the OS:\n  import os\n  os.getcwd()  # current directory\n  os.path.exists(path)  # check if file exists\n\ndatetime — work with dates and times:\n  from datetime import datetime\n  now = datetime.now()\n  now.strftime("%Y-%m-%d")  →  "2024-01-15"\n\njson — parse and create JSON:\n  import json\n  data = json.loads('{"name": "Alice"}')  # string → dict\n  text = json.dumps({"name": "Alice"})    # dict → string\n\npathlib — modern file paths:\n  from pathlib import Path\n  p = Path("folder/file.txt")\n  p.exists(), p.suffix, p.stem`,
+    codeExample: `import json\nfrom datetime import datetime\n\ndata = {"name": "Alice", "age": 25}\njson_string = json.dumps(data, indent=2)\nprint(json_string)\n\nraw = '{"city": "London", "pop": 9000000}'\nparsed = json.loads(raw)\nprint(parsed["city"])\n\nnow = datetime.now()\nprint(now.strftime("%Y-%m-%d"))`,
+    problems: [
+      { id: 's01t07p0', title: 'JSON Builder', description: 'Ask for name, age, and city. Build a dict and print it as formatted JSON with indent=2.', inputSpec: 'Line 1: name\nLine 2: age (integer)\nLine 3: city', outputSpec: 'Formatted JSON with indent=2', example: { input: 'Alice\n25\nLondon', output: '{\n  "name": "Alice",\n  "age": 25,\n  "city": "London"\n}' }, testInput: 'Marcus\n32\nTokyo', expectedOutput: '{\n  "name": "Marcus",\n  "age": 32,\n  "city": "Tokyo"\n}' },
+      { id: 's01t07p1', title: 'JSON Parser', description: 'Given a JSON string, parse it and print the "product" and "price" formatted to 2 decimal places.', inputSpec: 'One line: JSON string with "product" and "price" keys', outputSpec: 'Product: {product}\nPrice: ${price:.2f}', example: { input: '{"product": "Laptop", "price": 999.9}', output: 'Product: Laptop\nPrice: $999.90' }, testInput: '{"product": "Headphones", "price": 49.5}', expectedOutput: 'Product: Headphones\nPrice: $49.50' },
+      { id: 's01t07p2', title: 'Date Formatter', description: 'Ask for a date in YYYY-MM-DD format. Parse it and print in "DD Month YYYY" format (e.g., "15 January 2024").', inputSpec: 'One line: date in YYYY-MM-DD format', outputSpec: 'Date in "DD Month YYYY" format', example: { input: '2024-01-15', output: '15 January 2024' }, testInput: '2026-03-13', expectedOutput: '13 March 2026' },
+    ],
+  },
+  'String methods: .split(), .strip(), .replace(), .join()': {
+    explanation: `String methods are essential for cleaning and processing text in automation.\n\n.split(sep) — split string into list:\n  "hello world".split()   →  ["hello", "world"]\n  "a,b,c".split(",")      →  ["a", "b", "c"]\n\n.strip() — remove leading/trailing whitespace:\n  "  hello  ".strip()     →  "hello"\n\n.replace(old, new) — replace all occurrences:\n  "hello world".replace("world", "Python")  →  "hello Python"\n\n.join(iterable) — join list into a string:\n  ", ".join(["a", "b", "c"])  →  "a, b, c"\n\nOther useful methods: .upper() .lower() .startswith() .endswith() .count() .find()`,
+    codeExample: `raw = "  John Doe , 25 , London  "\nparts = [p.strip() for p in raw.split(",")]\nprint(parts)  # ["John Doe", "25", "London"]\n\nresult = " | ".join(parts)\nprint(result)  # "John Doe | 25 | London"\n\ntext = "I love cats. Cats are great."\nprint(text.replace("cats", "dogs").replace("Cats", "Dogs"))`,
+    problems: [
+      { id: 's01t08p0', title: 'CSV Row Parser', description: 'Ask for a CSV line (comma-separated, may have spaces). Split, strip each value, and print each on its own line.', inputSpec: 'One line: comma-separated values (may have spaces)', outputSpec: 'Each value on its own line, stripped', example: { input: 'Alice , 25 , London , developer', output: 'Alice\n25\nLondon\ndeveloper' }, testInput: 'Python , automation , freelance , 2024', expectedOutput: 'Python\nautomation\nfreelance\n2024' },
+      { id: 's01t08p1', title: 'Word Reverser', description: 'Ask for a sentence. Split into words, reverse the word order, join back with spaces and print.', inputSpec: 'One line: a sentence', outputSpec: 'Sentence with word order reversed', example: { input: 'Hello World Python', output: 'Python World Hello' }, testInput: 'I love coding in Python', expectedOutput: 'Python in coding love I' },
+      { id: 's01t08p2', title: 'Text Cleaner', description: 'Ask for a string with "---" as separators. Replace "---" with " | ", strip the whole string, and print.', inputSpec: 'One line: string with "---" separators and possible extra spaces', outputSpec: 'Cleaned string', example: { input: '  apple---banana---cherry  ', output: 'apple | banana | cherry' }, testInput: '  python---javascript---rust  ', expectedOutput: 'python | javascript | rust' },
+    ],
+  },
+  'Regular expressions (re module) — critical for extracting data from text': {
+    explanation: `Regular expressions (regex) find, extract, and validate patterns in text — essential for scraping.\n\n  import re\n\nKey functions:\n  re.search(pattern, text)    — find first match anywhere\n  re.findall(pattern, text)   — find ALL matches → list\n  re.sub(pattern, repl, text) — replace matches\n\nCommon patterns:\n  \\d   — any digit (0-9)\n  \\d+  — one or more digits\n  \\w+  — one or more word characters\n  .    — any character\n  *    — 0 or more\n  +    — 1 or more\n  []   — character class: [aeiou] matches any vowel\n\nExample:\n  phones = re.findall(r"\\d{3}-\\d{4}", "Call 555-1234")`,
+    codeExample: `import re\n\ntext = "Contact: alice@email.com or bob@work.org"\nemails = re.findall(r"[\\w.]+@[\\w.]+", text)\nprint(emails)\n\ntext2 = "I have 3 cats and 12 fish"\nnums = re.findall(r"\\d+", text2)\nprint(nums)  # ["3", "12"]\n\nmasked = re.sub(r"\\d", "#", "Card: 1234 5678")\nprint(masked)  # "Card: #### ####"`,
+    problems: [
+      { id: 's01t09p0', title: 'Number Extractor', description: 'Ask for a sentence containing numbers. Use re.findall to extract all numbers and print them as a list.', inputSpec: 'One line: a sentence containing integers', outputSpec: 'List of number strings found', example: { input: 'I bought 3 apples and 12 oranges for 5 dollars', output: "['3', '12', '5']" }, testInput: 'There are 7 days in a week and 24 hours in a day and 60 minutes in an hour', expectedOutput: "['7', '24', '60']" },
+      { id: 's01t09p1', title: 'Email Validator', description: 'Ask for an email address. Use re.match to check if it matches a basic email pattern. Print "Valid" or "Invalid".', inputSpec: 'One line: an email address', outputSpec: '"Valid" or "Invalid"', example: { input: 'alice@example.com', output: 'Valid' }, testInput: 'not-an-email', expectedOutput: 'Invalid' },
+      { id: 's01t09p2', title: 'Digit Masker', description: 'Ask for a string with digits. Use re.sub to replace all digits with "*". Print the masked string.', inputSpec: 'One line: a string with digits', outputSpec: 'Same string with all digits replaced by "*"', example: { input: 'Card: 4532 1234 5678 9012', output: 'Card: **** **** **** ****' }, testInput: 'Phone: 555-867-5309', expectedOutput: 'Phone: ***-***-****' },
+    ],
+  },
+  'Basic OOP: classes, __init__, methods, self': {
+    explanation: `OOP bundles data and functions together into objects.\n\nA class is a blueprint. An object is an instance created from it.\n\n  class Dog:\n      def __init__(self, name, breed):  # runs when object is created\n          self.name = name              # stores data on the object\n          self.breed = breed\n\n      def bark(self):                   # method (function on the object)\n          return f"{self.name} says: Woof!"\n\n  dog1 = Dog("Rex", "Labrador")\n  print(dog1.bark())   →  Rex says: Woof!\n\nself always refers to the current object and must be the first parameter of every method.`,
+    codeExample: `class BankAccount:\n    def __init__(self, owner, balance=0):\n        self.owner = owner\n        self.balance = balance\n\n    def deposit(self, amount):\n        self.balance += amount\n        return f"Deposited ${amount}. Balance: ${self.balance}"\n\n    def withdraw(self, amount):\n        if amount > self.balance:\n            return "Insufficient funds"\n        self.balance -= amount\n        return f"Withdrew ${amount}. Balance: ${self.balance}"\n\nacc = BankAccount("Alice", 100)\nprint(acc.deposit(50))\nprint(acc.withdraw(30))`,
+    problems: [
+      { id: 's01t10p0', title: 'Student Class', description: 'Create Student class with name and grade. Add pass_fail() that returns "Pass" if grade>=50 else "Fail". Ask for name and grade, print both.', inputSpec: 'Line 1: student name\nLine 2: grade (0-100)', outputSpec: 'Student: {name}\nResult: Pass or Fail', example: { input: 'Alice\n75', output: 'Student: Alice\nResult: Pass' }, testInput: 'Bob\n42', expectedOutput: 'Student: Bob\nResult: Fail' },
+      { id: 's01t10p1', title: 'Rectangle Class', description: 'Create Rectangle class with width and height. Add area() and perimeter() methods. Ask for dimensions and print both.', inputSpec: 'Line 1: width\nLine 2: height', outputSpec: 'Area: {area}\nPerimeter: {perimeter}', example: { input: '5\n3', output: 'Area: 15\nPerimeter: 16' }, testInput: '8\n4', expectedOutput: 'Area: 32\nPerimeter: 24' },
+      { id: 's01t10p2', title: 'Counter Class', description: 'Create Counter class starting at 0. Add increment(), decrement(), reset() methods each returning current count. Process commands until "done", print count after each.', inputSpec: 'Multiple lines: "increment", "decrement", or "reset", ending with "done"', outputSpec: 'Count after each command (not "done")', example: { input: 'increment\nincrement\ndecrement\nreset\ndone', output: '1\n2\n1\n0' }, testInput: 'increment\nincrement\nincrement\ndecrement\ndone', expectedOutput: '1\n2\n3\n2' },
+    ],
+  },
+  'Reading/writing .txt, .json, .csv files': {
+    explanation: `File handling is essential — scripts constantly read inputs and write outputs.\n\nReading a text file:\n  with open("file.txt", "r") as f:\n      content = f.read()        # entire file as string\n      lines = f.readlines()     # list of lines\n\nWriting a text file:\n  with open("file.txt", "w") as f:  # "w" overwrites, "a" appends\n      f.write("Hello\\n")\n\nJSON files:\n  import json\n  with open("data.json", "r") as f:\n      data = json.load(f)           # file → dict\n  with open("data.json", "w") as f:\n      json.dump(data, f, indent=2)  # dict → file\n\nAlways use "with open(...)" — it automatically closes the file even if an error occurs.`,
+    codeExample: `import json\n\ndata = {"name": "Alice", "scores": [95, 87, 92]}\nwith open("student.json", "w") as f:\n    json.dump(data, f, indent=2)\n\nwith open("student.json", "r") as f:\n    loaded = json.load(f)\n    print(loaded["name"])\n    print(sum(loaded["scores"]))`,
+    problems: [
+      { id: 's01t11p0', title: 'File Writer and Reader', description: 'Ask for 3 lines of text. Write them to output.txt. Read it back and print the number of lines and the second line.', inputSpec: '3 lines of text', outputSpec: 'Lines: 3\n{second line}', example: { input: 'Hello\nWorld\nPython', output: 'Lines: 3\nWorld' }, testInput: 'Automation\nIs\nPowerful', expectedOutput: 'Lines: 3\nIs' },
+      { id: 's01t11p1', title: 'JSON Save and Load', description: 'Ask for a name and 3 scores. Build a dict, save to scores.json, load it back, print the name and average score to 1 decimal.', inputSpec: 'Line 1: name\nLines 2-4: three integer scores', outputSpec: 'Name: {name}\nAverage: {avg}', example: { input: 'Alice\n90\n85\n92', output: 'Name: Alice\nAverage: 89.0' }, testInput: 'Bob\n70\n80\n75', expectedOutput: 'Name: Bob\nAverage: 75.0' },
+      { id: 's01t11p2', title: 'Line Counter', description: 'Ask for n lines of text. Write to a file. Then read and print: total lines, total words, total characters (no newlines).', inputSpec: 'Line 1: n\nNext n lines: text', outputSpec: 'Lines: {n}\nWords: {w}\nChars: {c}', example: { input: '2\nHello World\nPython is great', output: 'Lines: 2\nWords: 5\nChars: 26' }, testInput: '3\nI love Python\nAutomation is key\nKeep coding', expectedOutput: 'Lines: 3\nWords: 8\nChars: 37' },
+    ],
+  },
+  'Error handling: try/except/finally, raising exceptions, custom error messages': {
+    explanation: `Error handling prevents your script from crashing when something goes wrong.\n\n  try:\n      risky_code()\n  except ValueError as e:\n      print(f"Value error: {e}")\n  except (TypeError, KeyError) as e:\n      print(f"Error: {e}")\n  finally:\n      print("This always runs")  # cleanup code\n\nRaising exceptions:\n  raise ValueError("Age must be positive")\n\nCommon exception types:\n  ValueError — wrong value type (int("hello"))\n  TypeError — wrong type ("hello" + 5)\n  KeyError — dict key not found\n  IndexError — list index out of range\n  ZeroDivisionError — dividing by zero\n\nBest practice: always catch specific exceptions, never bare except:`,
+    codeExample: `def safe_divide(a, b):\n    try:\n        return a / b\n    except ZeroDivisionError:\n        return "Error: Cannot divide by zero"\n    except TypeError:\n        return "Error: Please provide numbers"\n\nprint(safe_divide(10, 2))   # 5.0\nprint(safe_divide(10, 0))   # Error: Cannot divide by zero\n\ndef get_age(value):\n    try:\n        age = int(value)\n        if age < 0:\n            raise ValueError("Age cannot be negative")\n        return age\n    except ValueError as e:\n        return f"Invalid: {e}"`,
+    problems: [
+      { id: 's01t12p0', title: 'Safe Division', description: 'Ask for two values. Try to divide the first by the second. Handle ZeroDivisionError and ValueError (non-numeric). Print the result or error.', inputSpec: 'Line 1: first value\nLine 2: second value', outputSpec: 'Result as float, "Error: division by zero", or "Error: invalid input"', example: { input: '10\n2', output: '5.0' }, testInput: '10\n0', expectedOutput: 'Error: division by zero' },
+      { id: 's01t12p1', title: 'Safe List Access', description: 'Ask for space-separated items and an index. Access that index. Handle IndexError. Print the item or error.', inputSpec: 'Line 1: space-separated items\nLine 2: index (integer)', outputSpec: 'The item or "Error: index out of range"', example: { input: 'apple banana cherry\n1', output: 'banana' }, testInput: 'apple banana cherry\n10', expectedOutput: 'Error: index out of range' },
+      { id: 's01t12p2', title: 'Age Validator', description: 'Ask for an age. Convert to int — if invalid raise ValueError. If negative raise ValueError with "Age cannot be negative". Print "Valid age: {age}" or "Error: {message}".', inputSpec: 'One line: age input', outputSpec: '"Valid age: {age}" or "Error: {message}"', example: { input: '25', output: 'Valid age: 25' }, testInput: '-5', expectedOutput: 'Error: Age cannot be negative' },
+    ],
+  },
+  'Logging with the logging module instead of print() — for unattended scripts': {
+    explanation: `When scripts run unattended (on servers, scheduled), print() is not enough. logging gives you:\n• Log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL\n• Timestamps automatically\n• Write to files easily\n• Turn off debug messages in production\n\n  import logging\n  logging.basicConfig(\n      level=logging.DEBUG,\n      format="%(asctime)s - %(levelname)s - %(message)s"\n  )\n\n  logging.debug("Detailed debug info")\n  logging.info("Script started")\n  logging.warning("Something unexpected")\n  logging.error("An error occurred")\n\nIn production: set level=logging.WARNING\nIn development: set level=logging.DEBUG`,
+    codeExample: `import logging\n\nlogging.basicConfig(\n    level=logging.DEBUG,\n    format="%(levelname)s - %(message)s"\n)\n\ndef process_data(data):\n    logging.info(f"Processing {len(data)} items")\n    results = []\n    for item in data:\n        try:\n            results.append(int(item) * 2)\n            logging.debug(f"Processed: {item}")\n        except ValueError:\n            logging.warning(f"Skipped: {item}")\n    return results\n\nprint(process_data(["1", "2", "bad", "4"]))`,
+    problems: [
+      { id: 's01t13p0', title: 'Logging Levels', description: 'Set up logging with format "%(levelname)s - %(message)s". Ask for a number. Log WARNING if >100, ERROR if <0, INFO "Value accepted" otherwise. Print the log line.', inputSpec: 'One line: an integer', outputSpec: 'The log message triggered', example: { input: '50', output: 'INFO - Value accepted' }, testInput: '150', expectedOutput: 'WARNING - Value too high' },
+      { id: 's01t13p1', title: 'Safe Processor', description: 'Set up logging format "%(levelname)s - %(message)s". Ask for space-separated values. Log DEBUG "Processed: {n}" for valid ints, WARNING "Skipped: {val}" for invalid. Print all log lines.', inputSpec: 'One line: space-separated values (mix of valid/invalid)', outputSpec: 'One log line per value', example: { input: '1 2 bad 4', output: 'DEBUG - Processed: 1\nDEBUG - Processed: 2\nWARNING - Skipped: bad\nDEBUG - Processed: 4' }, testInput: '10 hello 30 world', expectedOutput: 'DEBUG - Processed: 10\nWARNING - Skipped: hello\nDEBUG - Processed: 30\nWARNING - Skipped: world' },
+      { id: 's01t13p2', title: 'Script Logger', description: 'Log INFO "Script started". Ask for a number, compute 100/n. Log INFO "Result: {result}" or ERROR "Failed: division by zero". Then log INFO "Script finished". Print all 3 log lines.', inputSpec: 'One line: a number', outputSpec: '3 log lines', example: { input: '5', output: 'INFO - Script started\nINFO - Result: 20.0\nINFO - Script finished' }, testInput: '0', expectedOutput: 'INFO - Script started\nERROR - Failed: division by zero\nINFO - Script finished' },
+    ],
+  },
+};
+
+const STAGE01_FINAL_PROBLEMS: CodingProblem[] = [
+  { id: 's01final0', title: 'Contact Book', description: 'Ask for n contacts (name,phone per line). Store in a dict. Then ask for a name to look up. Print the phone or "Not found".', inputSpec: 'Line 1: n\nNext n lines: "name,phone"\nLast line: name to look up', outputSpec: 'Phone number or "Not found"', example: { input: '3\nAlice,555-1234\nBob,555-5678\nCarol,555-9012\nBob', output: '555-5678' }, testInput: '3\nAlice,555-1234\nBob,555-5678\nCarol,555-9012\nDave', expectedOutput: 'Not found' },
+  { id: 's01final1', title: 'Word Frequency Counter', description: 'Ask for a sentence. Count frequency of each word (case-insensitive). Print each word and count in alphabetical order as "word: count".', inputSpec: 'One line: a sentence', outputSpec: 'One line per word alphabetically: "word: count"', example: { input: 'the cat sat on the mat the cat', output: 'cat: 2\nmat: 1\non: 1\nsat: 1\nthe: 3' }, testInput: 'to be or not to be that is the question', expectedOutput: 'be: 2\nis: 1\nnot: 1\nor: 1\nquestion: 1\nthat: 1\nthe: 1\nto: 2' },
+  { id: 's01final2', title: 'Student Grade Manager', description: 'Create a Student class with name and scores list. Add add_score(), average(), and grade() (A/B/C/D/F by average). Ask for name, then scores until "done". Print name, average (1 decimal), and grade.', inputSpec: 'Line 1: name\nNext lines: integer scores\n"done" to finish', outputSpec: 'Name: {name}\nAverage: {avg}\nGrade: {letter}', example: { input: 'Alice\n90\n85\n92\n88\ndone', output: 'Name: Alice\nAverage: 88.8\nGrade: B' }, testInput: 'Bob\n55\n62\n48\n70\ndone', expectedOutput: 'Name: Bob\nAverage: 58.8\nGrade: F' },
+  { id: 's01final3', title: 'Data Cleaner Pipeline', description: 'Ask for n lines of raw data ("name, age, city"). Clean each: strip whitespace from each field, convert age to int. Skip invalid age records with a warning. Print valid records as "name | age | city" and warnings as "WARNING - Skipped: {raw_line}".', inputSpec: 'Line 1: n\nNext n lines: "name, age, city" with spaces', outputSpec: 'Valid: "name | age | city"\nInvalid: "WARNING - Skipped: {line}"', example: { input: '3\n Alice , 25 , London \n Bob , bad , Paris \n Carol , 30 , Tokyo ', output: 'Alice | 25 | London\nWARNING - Skipped:  Bob , bad , Paris \nCarol | 30 | Tokyo' }, testInput: '3\n  Marcus , 32 , Berlin  \n  Jane , abc , Oslo  \n  Kim , 28 , Seoul  ', expectedOutput: 'Marcus | 32 | Berlin\nWARNING - Skipped:   Jane , abc , Oslo  \nKim | 28 | Seoul' },
+  { id: 's01final4', title: 'File TODO App', description: 'Read existing todos from todos.json if it exists (default to empty list). Ask for a command: "add {task}", "list", or "done {index}" (1-based). Execute, save back to todos.json, and print result.', inputSpec: 'One line: a command', outputSpec: 'add: "Added: {task}"\nlist: numbered list or "No todos"\ndone: "Completed: {task}"', example: { input: 'add Buy groceries', output: 'Added: Buy groceries' }, testInput: 'list', expectedOutput: 'No todos' },
+];
+
+// ─── Topic Learn Modal ───────────────────────────────────────────────────────
+
+function CodeProblemBlock({
+  problem, color, index, onPass,
+}: {
+  problem: CodingProblem; color: string; index: number; onPass: () => void;
+}) {
+  const [file, setFile] = useState<File | null>(null);
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<{ output: string; error: string; passed?: boolean } | null>(null);
+  const [passed, setPassed] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] || null;
+    setFile(f);
+    setResult(null);
+  };
+
+  const handleRun = async () => {
+    if (!file) return;
+    setRunning(true);
+    setResult(null);
+    try {
+      const code = await file.text();
+      const { output, error } = await runCode(code, problem.testInput);
+      const actualOutput = output.trim();
+      const expectedOutput = problem.expectedOutput.trim();
+      const ok = actualOutput === expectedOutput;
+      setResult({ output: actualOutput || error, error, passed: ok });
+      if (ok) { setPassed(true); setTimeout(onPass, 800); }
+    } catch {
+      setResult({ output: '', error: 'Failed to run code.', passed: false });
+    }
+    setRunning(false);
+  };
+
+  return (
+    <div style={{ background: '#07080f', border: `1px solid ${passed ? '#34d39940' : result && !result.passed ? '#f8717130' : '#1e2030'}`, borderRadius: 10, padding: 18, marginBottom: 14, transition: 'border-color 0.2s' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+        <div style={{ width: 24, height: 24, borderRadius: '50%', background: passed ? '#34d399' : color + '30', border: `2px solid ${passed ? '#34d399' : color + '60'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: passed ? '#07080f' : color, flexShrink: 0 }}>
+          {passed ? '✓' : index + 1}
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#e2e8f0' }}>{problem.title}</div>
+      </div>
+      <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.7, marginBottom: 14 }}>{problem.description}</div>
+
+      {/* Specs */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+        <div style={{ background: '#0c0d17', borderRadius: 8, padding: '10px 12px' }}>
+          <div style={{ fontSize: 10, color: color, letterSpacing: '0.12em', fontWeight: 600, marginBottom: 6 }}>INPUT</div>
+          <pre style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'monospace' }}>{problem.inputSpec}</pre>
+        </div>
+        <div style={{ background: '#0c0d17', borderRadius: 8, padding: '10px 12px' }}>
+          <div style={{ fontSize: 10, color: color, letterSpacing: '0.12em', fontWeight: 600, marginBottom: 6 }}>OUTPUT</div>
+          <pre style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'monospace' }}>{problem.outputSpec}</pre>
+        </div>
+      </div>
+
+      {/* Example */}
+      <div style={{ background: '#0c0d17', borderRadius: 8, padding: '10px 12px', marginBottom: 14, border: `1px solid ${color}15` }}>
+        <div style={{ fontSize: 10, color: color, letterSpacing: '0.12em', fontWeight: 600, marginBottom: 8 }}>EXAMPLE</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div>
+            <div style={{ fontSize: 10, color: '#374151', marginBottom: 4 }}>Input:</div>
+            <pre style={{ fontSize: 12, color: '#94a3b8', background: '#07080f', padding: '6px 8px', borderRadius: 5, margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>{problem.example.input}</pre>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: '#374151', marginBottom: 4 }}>Expected Output:</div>
+            <pre style={{ fontSize: 12, color: '#34d399', background: '#07080f', padding: '6px 8px', borderRadius: 5, margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>{problem.example.output}</pre>
+          </div>
+        </div>
+      </div>
+
+      {/* Upload + Run */}
+      {!passed && (
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <input ref={fileInputRef} type="file" accept=".py" onChange={handleFileChange} style={{ display: 'none' }} />
+          <button onClick={() => fileInputRef.current?.click()} style={{ background: '#1a1d2e', border: `1px solid #2d3050`, color: '#94a3b8', fontSize: 12, fontWeight: 600, padding: '8px 14px', borderRadius: 7, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
+            {file ? `📄 ${file.name}` : '📁 Upload .py file'}
+          </button>
+          <button onClick={handleRun} disabled={!file || running} style={{ background: file && !running ? color : '#1e2030', border: 'none', color: file && !running ? '#07080f' : '#374151', fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 7, cursor: file && !running ? 'pointer' : 'not-allowed', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: 6 }}>
+            {running ? <><div style={{ width: 12, height: 12, border: '2px solid #07080f30', borderTop: '2px solid #07080f', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Running...</> : '▶ Run & Check'}
+          </button>
+        </div>
+      )}
+
+      {/* Result */}
+      {result && (
+        <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: result.passed ? '#34d39910' : '#f8717110', border: `1px solid ${result.passed ? '#34d39930' : '#f8717130'}` }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: result.passed ? '#34d399' : '#f87171', marginBottom: result.output ? 6 : 0 }}>
+            {result.passed ? '✓ Correct! All test cases passed.' : '✗ Output does not match. Try again.'}
+          </div>
+          {result.output && (
+            <div>
+              <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>Your output:</div>
+              <pre style={{ fontSize: 12, color: '#94a3b8', margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>{result.output}</pre>
+            </div>
+          )}
+          {!result.passed && (
+            <div style={{ marginTop: 8 }}>
+              <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>Expected:</div>
+              <pre style={{ fontSize: 12, color: '#34d399', margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>{problem.expectedOutput}</pre>
+            </div>
+          )}
+        </div>
+      )}
+      {passed && <div style={{ marginTop: 10, fontSize: 13, color: '#34d399', fontWeight: 600 }}>✓ Problem solved!</div>}
+    </div>
+  );
 }
 
 function TopicLearnModal({
@@ -420,184 +683,92 @@ function TopicLearnModal({
   topic: string; stageTitle: string; stageColor: string;
   onClose: () => void; onComplete: () => void;
 }) {
-  const [content, setContent] = useState<TopicContent | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [selected, setSelected] = useState<(number | null)[]>([null, null, null]);
-  const [submitted, setSubmitted] = useState<boolean[]>([false, false, false]);
-  const [allCorrect, setAllCorrect] = useState(false);
+  const content = STAGE01_CONTENT[topic] || null;
+  const [passedProblems, setPassedProblems] = useState<boolean[]>([false, false, false]);
+  const [showCode, setShowCode] = useState(false);
+  const allPassed = passedProblems.every(Boolean);
 
-  useEffect(() => {
-    loadContent();
-  }, []);
-
-  const loadContent = async () => {
-    setLoading(true); setError('');
-    try {
-      const prompt = `You are a concise programming tutor for an AI automation roadmap. 
-
-Topic: "${topic}"
-Course context: "${stageTitle}"
-
-Respond with ONLY a JSON object (no markdown, no backticks):
-{
-  "explanation": "A clear, practical explanation in 3-4 sentences. Use concrete examples. Focus on WHY this matters for automation work.",
-  "problems": [
-    {
-      "question": "A practical multiple choice question testing understanding of this topic",
-      "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correct": 0,
-      "explanation": "Why this answer is correct in one sentence."
-    },
-    { second problem same format },
-    { third problem same format }
-  ]
-}
-
-Make questions practical and scenario-based, not just definitions. The correct field is the 0-based index of the correct option.`;
-
-      const raw = await callClaude(prompt);
-      const clean = raw.replace(/```json|```/g, '').trim();
-      const parsed: TopicContent = JSON.parse(clean);
-      setContent(parsed);
-    } catch (e) {
-      setError('Failed to load content. Please try again.');
-    }
-    setLoading(false);
+  const handlePass = (idx: number) => {
+    const next = [...passedProblems];
+    next[idx] = true;
+    setPassedProblems(next);
   };
 
-  const handleSelect = (pIdx: number, oIdx: number) => {
-    if (submitted[pIdx]) return;
-    const next = [...selected];
-    next[pIdx] = oIdx;
-    setSelected(next);
-  };
-
-  const handleSubmit = (pIdx: number) => {
-    if (selected[pIdx] === null) return;
-    const next = [...submitted];
-    next[pIdx] = true;
-    setSubmitted(next);
-    if (next.every(Boolean) && content) {
-      const allRight = next.every((s, i) => s && selected[i] === content.problems[i].correct);
-      if (allRight) setAllCorrect(true);
-    }
-  };
-
-  const correctCount = content ? submitted.filter((s, i) => s && selected[i] === content.problems[i].correct).length : 0;
+  if (!content) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={e => e.target === e.currentTarget && onClose()}>
+        <div style={{ background: '#0c0d17', border: `1px solid ${stageColor}40`, borderRadius: 16, width: '100%', maxWidth: 580, padding: 32, textAlign: 'center' }}>
+          <div style={{ fontSize: 32, marginBottom: 16 }}>🚧</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', marginBottom: 8 }}>Coming Soon</div>
+          <div style={{ fontSize: 14, color: '#475569', marginBottom: 20 }}>Practice problems for this topic are being prepared. Check back soon!</div>
+          <button onClick={onClose} style={{ background: stageColor, border: 'none', color: '#07080f', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 14, fontFamily: 'Inter, sans-serif' }}>Close</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 1000,
-      background: 'rgba(0,0,0,0.85)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', padding: 20,
-    }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{
-        background: '#0c0d17', border: `1px solid ${stageColor}40`,
-        borderRadius: 16, width: '100%', maxWidth: 640,
-        maxHeight: '90vh', overflowY: 'auto', padding: 28,
-      }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: '#0c0d17', border: `1px solid ${stageColor}40`, borderRadius: 16, width: '100%', maxWidth: 680, maxHeight: '92vh', overflowY: 'auto', padding: 28 }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
           <div>
             <div style={{ fontSize: 10, color: stageColor, letterSpacing: '0.14em', fontWeight: 700, marginBottom: 6 }}>LEARN THIS TOPIC</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', lineHeight: 1.4 }}>{topic}</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', lineHeight: 1.4, maxWidth: 520 }}>{topic}</div>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#475569', fontSize: 22, cursor: 'pointer', lineHeight: 1, padding: '0 4px' }}>×</button>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#475569', fontSize: 22, cursor: 'pointer', lineHeight: 1, padding: '0 4px', flexShrink: 0 }}>×</button>
         </div>
 
-        {loading && (
-          <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <div style={{ fontSize: 14, color: '#475569', marginBottom: 12 }}>Generating lesson...</div>
-            <div style={{ width: 40, height: 40, border: `3px solid ${stageColor}30`, borderTop: `3px solid ${stageColor}`, borderRadius: '50%', margin: '0 auto', animation: 'spin 0.8s linear infinite' }} />
+        {/* Progress pills */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+          {[0, 1, 2].map(i => (
+            <div key={i} style={{ flex: 1, height: 4, borderRadius: 99, background: passedProblems[i] ? '#34d399' : '#1e2030', transition: 'background 0.3s' }} />
+          ))}
+        </div>
+
+        {/* Explanation */}
+        <div style={{ background: stageColor + '08', border: `1px solid ${stageColor}20`, borderLeft: `3px solid ${stageColor}`, borderRadius: 8, padding: '14px 16px', marginBottom: 6 }}>
+          <div style={{ fontSize: 11, color: stageColor, letterSpacing: '0.12em', fontWeight: 700, marginBottom: 10 }}>EXPLANATION</div>
+          <pre style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.85, whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'Inter, sans-serif' }}>{content.explanation}</pre>
+        </div>
+
+        {/* Code example toggle */}
+        <button onClick={() => setShowCode(s => !s)} style={{ background: 'transparent', border: 'none', color: stageColor, fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: '10px 0', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: 6 }}>
+          {showCode ? '▾' : '▸'} {showCode ? 'Hide' : 'Show'} Code Example
+        </button>
+        {showCode && (
+          <div style={{ background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '14px 16px', marginBottom: 18 }}>
+            <pre style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.7, whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'monospace' }}>{content.codeExample}</pre>
           </div>
         )}
 
-        {error && (
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <div style={{ color: '#f87171', fontSize: 14, marginBottom: 12 }}>{error}</div>
-            <button onClick={loadContent} style={{ background: stageColor, border: 'none', color: '#07080f', padding: '8px 20px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>Try Again</button>
+        {/* Problems */}
+        <div style={{ fontSize: 11, color: '#475569', letterSpacing: '0.12em', fontWeight: 600, marginBottom: 14, marginTop: showCode ? 4 : 14 }}>
+          CODING CHALLENGES — solve all 3 to complete this topic
+        </div>
+        <div style={{ fontSize: 12, color: '#374151', marginBottom: 16, lineHeight: 1.6 }}>
+          Write your solution in VS Code, then upload the <code style={{ color: stageColor, background: stageColor + '15', padding: '1px 5px', borderRadius: 4 }}>.py</code> file here. We'll run it with test inputs and check the output automatically.
+        </div>
+
+        {content.problems.map((p, i) => (
+          <CodeProblemBlock key={p.id} problem={p} color={stageColor} index={i} onPass={() => handlePass(i)} />
+        ))}
+
+        {/* Complete button */}
+        {allPassed && (
+          <div style={{ marginTop: 8, padding: '20px', borderRadius: 12, background: '#34d39910', border: '1px solid #34d39940', textAlign: 'center' }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>🎉</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#34d399', marginBottom: 12 }}>All 3 problems solved!</div>
+            <button onClick={onComplete} style={{ background: '#34d399', border: 'none', color: '#07080f', padding: '12px 28px', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 15, fontFamily: 'Inter, sans-serif' }}>
+              Mark Topic Complete ✓
+            </button>
           </div>
-        )}
-
-        {content && !loading && (
-          <>
-            {/* Explanation */}
-            <div style={{ background: stageColor + '0a', border: `1px solid ${stageColor}20`, borderLeft: `3px solid ${stageColor}`, borderRadius: 8, padding: '14px 16px', marginBottom: 24 }}>
-              <div style={{ fontSize: 11, color: stageColor, letterSpacing: '0.12em', fontWeight: 600, marginBottom: 8 }}>EXPLANATION</div>
-              <div style={{ fontSize: 14, color: '#cbd5e1', lineHeight: 1.8 }}>{content.explanation}</div>
-            </div>
-
-            {/* Problems */}
-            <div style={{ fontSize: 11, color: '#475569', letterSpacing: '0.12em', fontWeight: 600, marginBottom: 14 }}>
-              PRACTICE PROBLEMS — answer all 3 correctly to complete this topic
-            </div>
-
-            {content.problems.map((p, pIdx) => {
-              const isSubmitted = submitted[pIdx];
-              const isCorrect = isSubmitted && selected[pIdx] === p.correct;
-              return (
-                <div key={pIdx} style={{ background: '#07080f', border: `1px solid ${isSubmitted ? (isCorrect ? '#34d39940' : '#f8717140') : '#1e2030'}`, borderRadius: 10, padding: 16, marginBottom: 12 }}>
-                  <div style={{ fontSize: 13, color: '#e2e8f0', fontWeight: 600, marginBottom: 12, lineHeight: 1.5 }}>
-                    <span style={{ color: stageColor, marginRight: 8, opacity: 0.6 }}>{pIdx + 1}.</span>
-                    {p.question}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 12 }}>
-                    {p.options.map((opt, oIdx) => {
-                      let bg = '#0c0d17';
-                      let border = '#1e2030';
-                      let color = '#94a3b8';
-                      if (selected[pIdx] === oIdx && !isSubmitted) { bg = stageColor + '15'; border = stageColor; color = '#e2e8f0'; }
-                      if (isSubmitted && oIdx === p.correct) { bg = '#34d39915'; border = '#34d399'; color = '#34d399'; }
-                      if (isSubmitted && selected[pIdx] === oIdx && oIdx !== p.correct) { bg = '#f8717115'; border = '#f87171'; color = '#f87171'; }
-                      return (
-                        <div key={oIdx} onClick={() => handleSelect(pIdx, oIdx)}
-                          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 7, border: `1px solid ${border}`, background: bg, cursor: isSubmitted ? 'default' : 'pointer', transition: 'all 0.12s' }}>
-                          <div style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${border}`, background: selected[pIdx] === oIdx ? border : 'transparent', flexShrink: 0 }} />
-                          <span style={{ fontSize: 13, color, lineHeight: 1.4 }}>{opt}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {!isSubmitted && (
-                    <button onClick={() => handleSubmit(pIdx)} disabled={selected[pIdx] === null}
-                      style={{ background: selected[pIdx] !== null ? stageColor : '#1e2030', border: 'none', color: selected[pIdx] !== null ? '#07080f' : '#374151', fontSize: 12, fontWeight: 700, padding: '7px 16px', borderRadius: 6, cursor: selected[pIdx] !== null ? 'pointer' : 'not-allowed', transition: 'all 0.12s' }}>
-                      Check Answer
-                    </button>
-                  )}
-                  {isSubmitted && (
-                    <div style={{ fontSize: 12, color: isCorrect ? '#34d399' : '#f87171', background: isCorrect ? '#34d39910' : '#f8717110', padding: '7px 12px', borderRadius: 6 }}>
-                      {isCorrect ? '✓ Correct! ' : '✗ Not quite. '}{p.explanation}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* Result */}
-            {submitted.every(Boolean) && (
-              <div style={{ marginTop: 16, padding: '16px 20px', borderRadius: 10, background: allCorrect ? '#34d39915' : '#fbbf2415', border: `1px solid ${allCorrect ? '#34d39940' : '#fbbf2440'}`, textAlign: 'center' }}>
-                <div style={{ fontSize: 24, marginBottom: 8 }}>{allCorrect ? '🎉' : '💪'}</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: allCorrect ? '#34d399' : '#fbbf24', marginBottom: 6 }}>
-                  {allCorrect ? 'Perfect! Topic mastered!' : `${correctCount}/3 correct — review and try again`}
-                </div>
-                {allCorrect ? (
-                  <button onClick={onComplete} style={{ background: '#34d399', border: 'none', color: '#07080f', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 14, marginTop: 4 }}>
-                    Mark as Complete ✓
-                  </button>
-                ) : (
-                  <button onClick={loadContent} style={{ background: stageColor, border: 'none', color: '#07080f', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 14, marginTop: 4 }}>
-                    Try New Questions →
-                  </button>
-                )}
-              </div>
-            )}
-          </>
         )}
       </div>
     </div>
   );
 }
+
 
 // ─── Stage Quiz Modal ────────────────────────────────────────────────────────
 
@@ -606,139 +777,60 @@ function StageQuizModal({
 }: {
   stage: typeof stages[0]; onClose: () => void; onPass: () => void;
 }) {
-  const [questions, setQuestions] = useState<Problem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [selected, setSelected] = useState<(number | null)[]>(Array(5).fill(null));
-  const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState(0);
+  const isStage01 = stage.number === '01';
+  const problems = isStage01 ? STAGE01_FINAL_PROBLEMS : [];
+  const [passedProblems, setPassedProblems] = useState<boolean[]>(Array(problems.length).fill(false));
+  const passedCount = passedProblems.filter(Boolean).length;
+  const allPassed = passedCount >= 5 && passedProblems.every(Boolean);
 
-  useEffect(() => { loadQuiz(); }, []);
-
-  const loadQuiz = async () => {
-    setLoading(true); setError(''); setSubmitted(false); setSelected(Array(5).fill(null));
-    try {
-      const topicsList = stage.topics.join(', ');
-      const prompt = `You are a programming tutor. Create a 5-question stage completion quiz.
-
-Stage: "${stage.title}"
-Topics covered: ${topicsList}
-
-Respond with ONLY a JSON array (no markdown, no backticks) of 5 questions:
-[
-  {
-    "question": "Practical scenario-based question",
-    "options": ["A", "B", "C", "D"],
-    "correct": 0,
-    "explanation": "Why this is correct."
-  }
-]
-
-Make questions test real understanding across different topics in this stage. Mix difficulty levels.`;
-
-      const raw = await callClaude(prompt);
-      const clean = raw.replace(/```json|```/g, '').trim();
-      const parsed: Problem[] = JSON.parse(clean);
-      setQuestions(parsed);
-    } catch (e) {
-      setError('Failed to load quiz. Please try again.');
-    }
-    setLoading(false);
+  const handlePass = (idx: number) => {
+    const next = [...passedProblems];
+    next[idx] = true;
+    setPassedProblems(next);
   };
-
-  const handleSubmitQuiz = () => {
-    const s = questions.filter((q, i) => selected[i] === q.correct).length;
-    setScore(s);
-    setSubmitted(true);
-  };
-
-  const passed = score >= 4;
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: '#0c0d17', border: `1px solid ${stage.color}50`, borderRadius: 16, width: '100%', maxWidth: 660, maxHeight: '90vh', overflowY: 'auto', padding: 28 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+      <div style={{ background: '#0c0d17', border: `1px solid ${stage.color}50`, borderRadius: 16, width: '100%', maxWidth: 700, maxHeight: '92vh', overflowY: 'auto', padding: 28 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
           <div>
-            <div style={{ fontSize: 10, color: stage.color, letterSpacing: '0.14em', fontWeight: 700, marginBottom: 6 }}>STAGE COMPLETION QUIZ</div>
+            <div style={{ fontSize: 10, color: stage.color, letterSpacing: '0.14em', fontWeight: 700, marginBottom: 6 }}>STAGE COMPLETION CHALLENGE</div>
             <div style={{ fontSize: 18, fontWeight: 700, color: '#e2e8f0' }}>{stage.title}</div>
-            <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>Score 4/5 or higher to complete this stage</div>
+            <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>Solve all 5 problems to complete this stage</div>
           </div>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#475569', fontSize: 22, cursor: 'pointer' }}>×</button>
         </div>
 
-        {loading && (
-          <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <div style={{ fontSize: 14, color: '#475569', marginBottom: 12 }}>Generating quiz...</div>
-            <div style={{ width: 40, height: 40, border: `3px solid ${stage.color}30`, borderTop: `3px solid ${stage.color}`, borderRadius: '50%', margin: '0 auto', animation: 'spin 0.8s linear infinite' }} />
+        {/* Progress bar */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
+          {problems.map((_, i) => (
+            <div key={i} style={{ flex: 1, height: 5, borderRadius: 99, background: passedProblems[i] ? '#34d399' : '#1e2030', transition: 'background 0.3s' }} />
+          ))}
+        </div>
+
+        {!isStage01 && (
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#475569', fontSize: 14 }}>
+            🚧 Stage challenges coming soon!
           </div>
         )}
 
-        {error && (
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <div style={{ color: '#f87171', marginBottom: 12 }}>{error}</div>
-            <button onClick={loadQuiz} style={{ background: stage.color, border: 'none', color: '#07080f', padding: '8px 20px', borderRadius: 8, cursor: 'pointer', fontWeight: 700 }}>Try Again</button>
-          </div>
-        )}
+        <div style={{ fontSize: 12, color: '#374151', marginBottom: 18, lineHeight: 1.6 }}>
+          Write each solution in VS Code, then upload the <code style={{ color: stage.color, background: stage.color + '15', padding: '1px 5px', borderRadius: 4 }}>.py</code> file. We'll run it with hidden test inputs and verify the output.
+        </div>
 
-        {!loading && !error && !submitted && questions.length > 0 && (
-          <>
-            {questions.map((q, i) => (
-              <div key={i} style={{ background: '#07080f', border: '1px solid #1e2030', borderRadius: 10, padding: 16, marginBottom: 12 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0', marginBottom: 12, lineHeight: 1.5 }}>
-                  <span style={{ color: stage.color, marginRight: 8, opacity: 0.6 }}>{i + 1}.</span>{q.question}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                  {q.options.map((opt, oIdx) => (
-                    <div key={oIdx} onClick={() => { const n = [...selected]; n[i] = oIdx; setSelected(n); }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 7, border: `1px solid ${selected[i] === oIdx ? stage.color : '#1e2030'}`, background: selected[i] === oIdx ? stage.color + '15' : '#0c0d17', cursor: 'pointer', transition: 'all 0.12s' }}>
-                      <div style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${selected[i] === oIdx ? stage.color : '#2d3050'}`, background: selected[i] === oIdx ? stage.color : 'transparent', flexShrink: 0 }} />
-                      <span style={{ fontSize: 13, color: selected[i] === oIdx ? '#e2e8f0' : '#94a3b8' }}>{opt}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-            <button onClick={handleSubmitQuiz} disabled={selected.some(s => s === null)}
-              style={{ width: '100%', padding: '13px 0', borderRadius: 10, border: 'none', background: selected.every(s => s !== null) ? `linear-gradient(135deg, ${stage.color}, #818cf8)` : '#1e2030', color: selected.every(s => s !== null) ? '#07080f' : '#374151', fontSize: 14, fontWeight: 700, cursor: selected.every(s => s !== null) ? 'pointer' : 'not-allowed', marginTop: 8 }}>
-              Submit Quiz →
+        {problems.map((p, i) => (
+          <CodeProblemBlock key={p.id} problem={p} color={stage.color} index={i} onPass={() => handlePass(i)} />
+        ))}
+
+        {allPassed && (
+          <div style={{ marginTop: 16, padding: '24px', borderRadius: 12, background: '#34d39910', border: '1px solid #34d39940', textAlign: 'center' }}>
+            <div style={{ fontSize: 36, marginBottom: 10 }}>🏆</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: '#34d399', marginBottom: 8 }}>Stage Complete!</div>
+            <div style={{ fontSize: 14, color: '#475569', marginBottom: 20 }}>You solved all 5 challenges. Stage {stage.number} is mastered.</div>
+            <button onClick={onPass} style={{ background: '#34d399', border: 'none', color: '#07080f', padding: '14px 32px', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 16, fontFamily: 'Inter, sans-serif' }}>
+              Complete Stage 🎉
             </button>
-          </>
-        )}
-
-        {submitted && (
-          <div>
-            {questions.map((q, i) => {
-              const isCorrect = selected[i] === q.correct;
-              return (
-                <div key={i} style={{ background: '#07080f', border: `1px solid ${isCorrect ? '#34d39940' : '#f8717140'}`, borderRadius: 10, padding: 16, marginBottom: 10 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0', marginBottom: 10 }}>
-                    <span style={{ color: isCorrect ? '#34d399' : '#f87171', marginRight: 8 }}>{isCorrect ? '✓' : '✗'}</span>{q.question}
-                  </div>
-                  <div style={{ fontSize: 12, color: isCorrect ? '#34d399' : '#f87171', background: isCorrect ? '#34d39910' : '#f8717110', padding: '7px 12px', borderRadius: 6 }}>
-                    {isCorrect ? 'Correct! ' : `Correct answer: "${q.options[q.correct]}". `}{q.explanation}
-                  </div>
-                </div>
-              );
-            })}
-            <div style={{ marginTop: 16, padding: '20px', borderRadius: 12, background: passed ? '#34d39910' : '#f8717110', border: `1px solid ${passed ? '#34d39940' : '#f8717140'}`, textAlign: 'center' }}>
-              <div style={{ fontSize: 32, marginBottom: 10 }}>{passed ? '🏆' : '📚'}</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: passed ? '#34d399' : '#f87171', marginBottom: 6 }}>
-                {score}/5 — {passed ? 'Stage Passed!' : 'Not quite yet'}
-              </div>
-              <div style={{ fontSize: 13, color: '#475569', marginBottom: 16 }}>
-                {passed ? 'Excellent work! You have mastered this stage.' : 'You need 4/5 to pass. Review the topics and try again.'}
-              </div>
-              {passed ? (
-                <button onClick={onPass} style={{ background: '#34d399', border: 'none', color: '#07080f', padding: '12px 28px', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>
-                  Complete Stage 🎉
-                </button>
-              ) : (
-                <button onClick={loadQuiz} style={{ background: stage.color, border: 'none', color: '#07080f', padding: '12px 28px', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>
-                  Retry Quiz →
-                </button>
-              )}
-            </div>
           </div>
         )}
       </div>
