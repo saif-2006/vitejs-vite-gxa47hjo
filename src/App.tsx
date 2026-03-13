@@ -384,6 +384,368 @@ const stages = [
 
 const TOTAL_WEEKS = stages.reduce((sum, s) => sum + s.weeks, 0);
 
+// ─── AI API Call ─────────────────────────────────────────────────────────────
+
+async function callClaude(prompt: string): Promise<string> {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+  const data = await response.json();
+  return data.content?.map((b: any) => b.text || '').join('') || '';
+}
+
+// ─── Topic Learn Modal ───────────────────────────────────────────────────────
+
+interface Problem {
+  question: string;
+  options: string[];
+  correct: number;
+  explanation: string;
+}
+
+interface TopicContent {
+  explanation: string;
+  problems: Problem[];
+}
+
+function TopicLearnModal({
+  topic, stageTitle, stageColor, onClose, onComplete,
+}: {
+  topic: string; stageTitle: string; stageColor: string;
+  onClose: () => void; onComplete: () => void;
+}) {
+  const [content, setContent] = useState<TopicContent | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selected, setSelected] = useState<(number | null)[]>([null, null, null]);
+  const [submitted, setSubmitted] = useState<boolean[]>([false, false, false]);
+  const [allCorrect, setAllCorrect] = useState(false);
+
+  useEffect(() => {
+    loadContent();
+  }, []);
+
+  const loadContent = async () => {
+    setLoading(true); setError('');
+    try {
+      const prompt = `You are a concise programming tutor for an AI automation roadmap. 
+
+Topic: "${topic}"
+Course context: "${stageTitle}"
+
+Respond with ONLY a JSON object (no markdown, no backticks):
+{
+  "explanation": "A clear, practical explanation in 3-4 sentences. Use concrete examples. Focus on WHY this matters for automation work.",
+  "problems": [
+    {
+      "question": "A practical multiple choice question testing understanding of this topic",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correct": 0,
+      "explanation": "Why this answer is correct in one sentence."
+    },
+    { second problem same format },
+    { third problem same format }
+  ]
+}
+
+Make questions practical and scenario-based, not just definitions. The correct field is the 0-based index of the correct option.`;
+
+      const raw = await callClaude(prompt);
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const parsed: TopicContent = JSON.parse(clean);
+      setContent(parsed);
+    } catch (e) {
+      setError('Failed to load content. Please try again.');
+    }
+    setLoading(false);
+  };
+
+  const handleSelect = (pIdx: number, oIdx: number) => {
+    if (submitted[pIdx]) return;
+    const next = [...selected];
+    next[pIdx] = oIdx;
+    setSelected(next);
+  };
+
+  const handleSubmit = (pIdx: number) => {
+    if (selected[pIdx] === null) return;
+    const next = [...submitted];
+    next[pIdx] = true;
+    setSubmitted(next);
+    if (next.every(Boolean) && content) {
+      const allRight = next.every((s, i) => s && selected[i] === content.problems[i].correct);
+      if (allRight) setAllCorrect(true);
+    }
+  };
+
+  const correctCount = content ? submitted.filter((s, i) => s && selected[i] === content.problems[i].correct).length : 0;
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      background: 'rgba(0,0,0,0.85)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', padding: 20,
+    }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{
+        background: '#0c0d17', border: `1px solid ${stageColor}40`,
+        borderRadius: 16, width: '100%', maxWidth: 640,
+        maxHeight: '90vh', overflowY: 'auto', padding: 28,
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 10, color: stageColor, letterSpacing: '0.14em', fontWeight: 700, marginBottom: 6 }}>LEARN THIS TOPIC</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', lineHeight: 1.4 }}>{topic}</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#475569', fontSize: 22, cursor: 'pointer', lineHeight: 1, padding: '0 4px' }}>×</button>
+        </div>
+
+        {loading && (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <div style={{ fontSize: 14, color: '#475569', marginBottom: 12 }}>Generating lesson...</div>
+            <div style={{ width: 40, height: 40, border: `3px solid ${stageColor}30`, borderTop: `3px solid ${stageColor}`, borderRadius: '50%', margin: '0 auto', animation: 'spin 0.8s linear infinite' }} />
+          </div>
+        )}
+
+        {error && (
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <div style={{ color: '#f87171', fontSize: 14, marginBottom: 12 }}>{error}</div>
+            <button onClick={loadContent} style={{ background: stageColor, border: 'none', color: '#07080f', padding: '8px 20px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>Try Again</button>
+          </div>
+        )}
+
+        {content && !loading && (
+          <>
+            {/* Explanation */}
+            <div style={{ background: stageColor + '0a', border: `1px solid ${stageColor}20`, borderLeft: `3px solid ${stageColor}`, borderRadius: 8, padding: '14px 16px', marginBottom: 24 }}>
+              <div style={{ fontSize: 11, color: stageColor, letterSpacing: '0.12em', fontWeight: 600, marginBottom: 8 }}>EXPLANATION</div>
+              <div style={{ fontSize: 14, color: '#cbd5e1', lineHeight: 1.8 }}>{content.explanation}</div>
+            </div>
+
+            {/* Problems */}
+            <div style={{ fontSize: 11, color: '#475569', letterSpacing: '0.12em', fontWeight: 600, marginBottom: 14 }}>
+              PRACTICE PROBLEMS — answer all 3 correctly to complete this topic
+            </div>
+
+            {content.problems.map((p, pIdx) => {
+              const isSubmitted = submitted[pIdx];
+              const isCorrect = isSubmitted && selected[pIdx] === p.correct;
+              return (
+                <div key={pIdx} style={{ background: '#07080f', border: `1px solid ${isSubmitted ? (isCorrect ? '#34d39940' : '#f8717140') : '#1e2030'}`, borderRadius: 10, padding: 16, marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, color: '#e2e8f0', fontWeight: 600, marginBottom: 12, lineHeight: 1.5 }}>
+                    <span style={{ color: stageColor, marginRight: 8, opacity: 0.6 }}>{pIdx + 1}.</span>
+                    {p.question}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 12 }}>
+                    {p.options.map((opt, oIdx) => {
+                      let bg = '#0c0d17';
+                      let border = '#1e2030';
+                      let color = '#94a3b8';
+                      if (selected[pIdx] === oIdx && !isSubmitted) { bg = stageColor + '15'; border = stageColor; color = '#e2e8f0'; }
+                      if (isSubmitted && oIdx === p.correct) { bg = '#34d39915'; border = '#34d399'; color = '#34d399'; }
+                      if (isSubmitted && selected[pIdx] === oIdx && oIdx !== p.correct) { bg = '#f8717115'; border = '#f87171'; color = '#f87171'; }
+                      return (
+                        <div key={oIdx} onClick={() => handleSelect(pIdx, oIdx)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 7, border: `1px solid ${border}`, background: bg, cursor: isSubmitted ? 'default' : 'pointer', transition: 'all 0.12s' }}>
+                          <div style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${border}`, background: selected[pIdx] === oIdx ? border : 'transparent', flexShrink: 0 }} />
+                          <span style={{ fontSize: 13, color, lineHeight: 1.4 }}>{opt}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {!isSubmitted && (
+                    <button onClick={() => handleSubmit(pIdx)} disabled={selected[pIdx] === null}
+                      style={{ background: selected[pIdx] !== null ? stageColor : '#1e2030', border: 'none', color: selected[pIdx] !== null ? '#07080f' : '#374151', fontSize: 12, fontWeight: 700, padding: '7px 16px', borderRadius: 6, cursor: selected[pIdx] !== null ? 'pointer' : 'not-allowed', transition: 'all 0.12s' }}>
+                      Check Answer
+                    </button>
+                  )}
+                  {isSubmitted && (
+                    <div style={{ fontSize: 12, color: isCorrect ? '#34d399' : '#f87171', background: isCorrect ? '#34d39910' : '#f8717110', padding: '7px 12px', borderRadius: 6 }}>
+                      {isCorrect ? '✓ Correct! ' : '✗ Not quite. '}{p.explanation}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Result */}
+            {submitted.every(Boolean) && (
+              <div style={{ marginTop: 16, padding: '16px 20px', borderRadius: 10, background: allCorrect ? '#34d39915' : '#fbbf2415', border: `1px solid ${allCorrect ? '#34d39940' : '#fbbf2440'}`, textAlign: 'center' }}>
+                <div style={{ fontSize: 24, marginBottom: 8 }}>{allCorrect ? '🎉' : '💪'}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: allCorrect ? '#34d399' : '#fbbf24', marginBottom: 6 }}>
+                  {allCorrect ? 'Perfect! Topic mastered!' : `${correctCount}/3 correct — review and try again`}
+                </div>
+                {allCorrect ? (
+                  <button onClick={onComplete} style={{ background: '#34d399', border: 'none', color: '#07080f', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 14, marginTop: 4 }}>
+                    Mark as Complete ✓
+                  </button>
+                ) : (
+                  <button onClick={loadContent} style={{ background: stageColor, border: 'none', color: '#07080f', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 14, marginTop: 4 }}>
+                    Try New Questions →
+                  </button>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Stage Quiz Modal ────────────────────────────────────────────────────────
+
+function StageQuizModal({
+  stage, onClose, onPass,
+}: {
+  stage: typeof stages[0]; onClose: () => void; onPass: () => void;
+}) {
+  const [questions, setQuestions] = useState<Problem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selected, setSelected] = useState<(number | null)[]>(Array(5).fill(null));
+  const [submitted, setSubmitted] = useState(false);
+  const [score, setScore] = useState(0);
+
+  useEffect(() => { loadQuiz(); }, []);
+
+  const loadQuiz = async () => {
+    setLoading(true); setError(''); setSubmitted(false); setSelected(Array(5).fill(null));
+    try {
+      const topicsList = stage.topics.join(', ');
+      const prompt = `You are a programming tutor. Create a 5-question stage completion quiz.
+
+Stage: "${stage.title}"
+Topics covered: ${topicsList}
+
+Respond with ONLY a JSON array (no markdown, no backticks) of 5 questions:
+[
+  {
+    "question": "Practical scenario-based question",
+    "options": ["A", "B", "C", "D"],
+    "correct": 0,
+    "explanation": "Why this is correct."
+  }
+]
+
+Make questions test real understanding across different topics in this stage. Mix difficulty levels.`;
+
+      const raw = await callClaude(prompt);
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const parsed: Problem[] = JSON.parse(clean);
+      setQuestions(parsed);
+    } catch (e) {
+      setError('Failed to load quiz. Please try again.');
+    }
+    setLoading(false);
+  };
+
+  const handleSubmitQuiz = () => {
+    const s = questions.filter((q, i) => selected[i] === q.correct).length;
+    setScore(s);
+    setSubmitted(true);
+  };
+
+  const passed = score >= 4;
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: '#0c0d17', border: `1px solid ${stage.color}50`, borderRadius: 16, width: '100%', maxWidth: 660, maxHeight: '90vh', overflowY: 'auto', padding: 28 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 10, color: stage.color, letterSpacing: '0.14em', fontWeight: 700, marginBottom: 6 }}>STAGE COMPLETION QUIZ</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#e2e8f0' }}>{stage.title}</div>
+            <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>Score 4/5 or higher to complete this stage</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#475569', fontSize: 22, cursor: 'pointer' }}>×</button>
+        </div>
+
+        {loading && (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <div style={{ fontSize: 14, color: '#475569', marginBottom: 12 }}>Generating quiz...</div>
+            <div style={{ width: 40, height: 40, border: `3px solid ${stage.color}30`, borderTop: `3px solid ${stage.color}`, borderRadius: '50%', margin: '0 auto', animation: 'spin 0.8s linear infinite' }} />
+          </div>
+        )}
+
+        {error && (
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <div style={{ color: '#f87171', marginBottom: 12 }}>{error}</div>
+            <button onClick={loadQuiz} style={{ background: stage.color, border: 'none', color: '#07080f', padding: '8px 20px', borderRadius: 8, cursor: 'pointer', fontWeight: 700 }}>Try Again</button>
+          </div>
+        )}
+
+        {!loading && !error && !submitted && questions.length > 0 && (
+          <>
+            {questions.map((q, i) => (
+              <div key={i} style={{ background: '#07080f', border: '1px solid #1e2030', borderRadius: 10, padding: 16, marginBottom: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0', marginBottom: 12, lineHeight: 1.5 }}>
+                  <span style={{ color: stage.color, marginRight: 8, opacity: 0.6 }}>{i + 1}.</span>{q.question}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                  {q.options.map((opt, oIdx) => (
+                    <div key={oIdx} onClick={() => { const n = [...selected]; n[i] = oIdx; setSelected(n); }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 7, border: `1px solid ${selected[i] === oIdx ? stage.color : '#1e2030'}`, background: selected[i] === oIdx ? stage.color + '15' : '#0c0d17', cursor: 'pointer', transition: 'all 0.12s' }}>
+                      <div style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${selected[i] === oIdx ? stage.color : '#2d3050'}`, background: selected[i] === oIdx ? stage.color : 'transparent', flexShrink: 0 }} />
+                      <span style={{ fontSize: 13, color: selected[i] === oIdx ? '#e2e8f0' : '#94a3b8' }}>{opt}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <button onClick={handleSubmitQuiz} disabled={selected.some(s => s === null)}
+              style={{ width: '100%', padding: '13px 0', borderRadius: 10, border: 'none', background: selected.every(s => s !== null) ? `linear-gradient(135deg, ${stage.color}, #818cf8)` : '#1e2030', color: selected.every(s => s !== null) ? '#07080f' : '#374151', fontSize: 14, fontWeight: 700, cursor: selected.every(s => s !== null) ? 'pointer' : 'not-allowed', marginTop: 8 }}>
+              Submit Quiz →
+            </button>
+          </>
+        )}
+
+        {submitted && (
+          <div>
+            {questions.map((q, i) => {
+              const isCorrect = selected[i] === q.correct;
+              return (
+                <div key={i} style={{ background: '#07080f', border: `1px solid ${isCorrect ? '#34d39940' : '#f8717140'}`, borderRadius: 10, padding: 16, marginBottom: 10 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0', marginBottom: 10 }}>
+                    <span style={{ color: isCorrect ? '#34d399' : '#f87171', marginRight: 8 }}>{isCorrect ? '✓' : '✗'}</span>{q.question}
+                  </div>
+                  <div style={{ fontSize: 12, color: isCorrect ? '#34d399' : '#f87171', background: isCorrect ? '#34d39910' : '#f8717110', padding: '7px 12px', borderRadius: 6 }}>
+                    {isCorrect ? 'Correct! ' : `Correct answer: "${q.options[q.correct]}". `}{q.explanation}
+                  </div>
+                </div>
+              );
+            })}
+            <div style={{ marginTop: 16, padding: '20px', borderRadius: 12, background: passed ? '#34d39910' : '#f8717110', border: `1px solid ${passed ? '#34d39940' : '#f8717140'}`, textAlign: 'center' }}>
+              <div style={{ fontSize: 32, marginBottom: 10 }}>{passed ? '🏆' : '📚'}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: passed ? '#34d399' : '#f87171', marginBottom: 6 }}>
+                {score}/5 — {passed ? 'Stage Passed!' : 'Not quite yet'}
+              </div>
+              <div style={{ fontSize: 13, color: '#475569', marginBottom: 16 }}>
+                {passed ? 'Excellent work! You have mastered this stage.' : 'You need 4/5 to pass. Review the topics and try again.'}
+              </div>
+              {passed ? (
+                <button onClick={onPass} style={{ background: '#34d399', border: 'none', color: '#07080f', padding: '12px 28px', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>
+                  Complete Stage 🎉
+                </button>
+              ) : (
+                <button onClick={loadQuiz} style={{ background: stage.color, border: 'none', color: '#07080f', padding: '12px 28px', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>
+                  Retry Quiz →
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Reset Password Screen ────────────────────────────────────────────────────
 
 function ResetPasswordScreen() {
@@ -394,22 +756,16 @@ function ResetPasswordScreen() {
   const [success, setSuccess] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
 
-useEffect(() => {
+  useEffect(() => {
     const hash = window.location.hash.substring(1);
     const params = new URLSearchParams(hash);
     const access_token = params.get('access_token');
-    
     if (access_token) {
-      supabase.auth.setSession({
-        access_token: access_token,
-        refresh_token: params.get('refresh_token') || '',
-      }).then(({ error: e }) => {
-        if (e) {
-          setError('Invalid or expired reset link. Please request a new one.');
-        } else {
-          setSessionReady(true);
-        }
-      });
+      supabase.auth.setSession({ access_token, refresh_token: params.get('refresh_token') || '' })
+        .then(({ error: e }) => {
+          if (e) setError('Invalid or expired reset link. Please request a new one.');
+          else setSessionReady(true);
+        });
     } else {
       setError('Invalid reset link. Please request a new one.');
     }
@@ -417,29 +773,13 @@ useEffect(() => {
 
   const handleResetPassword = async () => {
     setError('');
-    if (!newPassword || !confirmPassword) {
-      setError('Please enter your new password.');
-      return;
-    }
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
-
+    if (!newPassword || !confirmPassword) { setError('Please enter your new password.'); return; }
+    if (newPassword.length < 6) { setError('Password must be at least 6 characters.'); return; }
+    if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return; }
     setLoading(true);
     const { error: e } = await supabase.auth.updateUser({ password: newPassword });
-    if (e) {
-      setError(e.message);
-    } else {
-      setSuccess(true);
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 3000);
-    }
+    if (e) setError(e.message);
+    else { setSuccess(true); setTimeout(() => { window.location.href = '/'; }, 3000); }
     setLoading(false);
   };
 
@@ -449,52 +789,29 @@ useEffect(() => {
       <div style={{ width: '100%', maxWidth: 420 }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{ fontSize: 11, color: '#2d3050', letterSpacing: '0.18em', marginBottom: 14, fontWeight: 600 }}>AI AUTOMATION MASTERY ROADMAP — v2.0</div>
-          <h1 style={{ fontSize: 32, fontWeight: 800, background: 'linear-gradient(135deg, #e2e8f0 0%, #818cf8 50%, #f472b6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1.2 }}>
-            RESET PASSWORD
-          </h1>
+          <h1 style={{ fontSize: 32, fontWeight: 800, background: 'linear-gradient(135deg, #e2e8f0 0%, #818cf8 50%, #f472b6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1.2 }}>RESET PASSWORD</h1>
           <p style={{ marginTop: 12, color: '#475569', fontSize: 14 }}>Enter your new password below.</p>
         </div>
-
         <div style={{ background: '#0c0d17', border: '1px solid #1e2030', borderRadius: 16, padding: 32 }}>
           {!success ? (
             <>
-              {!sessionReady && !error && (
-                <div style={{ textAlign: 'center', color: '#475569', fontSize: 14, padding: '20px 0' }}>
-                  Verifying reset link...
-                </div>
-              )}
-              {error && (
-                <div style={{ fontSize: 13, color: '#f87171', background: '#f8717115', border: '1px solid #f8717130', borderRadius: 8, padding: '10px 14px', marginBottom: 16 }}>
-                  {error}
-                </div>
-              )}
+              {!sessionReady && !error && <div style={{ textAlign: 'center', color: '#475569', fontSize: 14, padding: '20px 0' }}>Verifying reset link...</div>}
+              {error && <div style={{ fontSize: 13, color: '#f87171', background: '#f8717115', border: '1px solid #f8717130', borderRadius: 8, padding: '10px 14px', marginBottom: 16 }}>{error}</div>}
               {sessionReady && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <div>
                     <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>NEW PASSWORD</label>
-                    <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleResetPassword()}
-                      placeholder="Min. 6 characters"
-                      style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                    <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleResetPassword()} placeholder="Min. 6 characters" style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
                   </div>
                   <div>
                     <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>CONFIRM PASSWORD</label>
-                    <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleResetPassword()}
-                      placeholder="Re-enter your password"
-                      style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                    <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleResetPassword()} placeholder="Re-enter your password" style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
                   </div>
-
                   {error && <div style={{ fontSize: 13, color: '#f87171', background: '#f8717115', border: '1px solid #f8717130', borderRadius: 8, padding: '10px 14px' }}>{error}</div>}
-
-                  <button onClick={handleResetPassword} disabled={loading}
-                    style={{ width: '100%', padding: '12px 0', borderRadius: 8, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg, #818cf8, #f472b6)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'Inter, sans-serif', opacity: loading ? 0.7 : 1, marginTop: 4 }}>
+                  <button onClick={handleResetPassword} disabled={loading} style={{ width: '100%', padding: '12px 0', borderRadius: 8, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg, #818cf8, #f472b6)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'Inter, sans-serif', opacity: loading ? 0.7 : 1, marginTop: 4 }}>
                     {loading ? 'Resetting...' : 'Reset Password →'}
                   </button>
-
-                  <a href="/" style={{ textAlign: 'center', color: '#818cf8', textDecoration: 'none', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-                    Back to Login
-                  </a>
+                  <a href="/" style={{ textAlign: 'center', color: '#818cf8', textDecoration: 'none', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>Back to Login</a>
                 </div>
               )}
             </>
@@ -502,14 +819,11 @@ useEffect(() => {
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: '#34d399', marginBottom: 8 }}>Password Reset Successful!</div>
-              <div style={{ fontSize: 13, color: '#475569', marginBottom: 16 }}>Redirecting you to login...</div>
+              <div style={{ fontSize: 13, color: '#475569' }}>Redirecting you to login...</div>
             </div>
           )}
         </div>
-
-        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: '#1e2030' }}>
-          Your progress is saved to your account across all devices.
-        </div>
+        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: '#1e2030' }}>Your progress is saved to your account across all devices.</div>
       </div>
     </div>
   );
@@ -534,15 +848,14 @@ function AuthScreen({ onAuth }: { onAuth: () => void }) {
     setError(''); setSuccess(''); setLoading(true);
     if (!email || !password) { setError('Please enter your email and password.'); setLoading(false); return; }
     if (password.length < 6) { setError('Password must be at least 6 characters.'); setLoading(false); return; }
-
     if (mode === 'signup') {
       const { error: e } = await supabase.auth.signUp({ email, password });
-      if (e) { setError(e.message); }
+      if (e) setError(e.message);
       else { setSuccess('Account created! You can now log in.'); setMode('login'); setEmail(''); setPassword(''); }
     } else {
       const { error: e } = await supabase.auth.signInWithPassword({ email, password });
-      if (e) { setError(e.message); }
-      else { onAuth(); }
+      if (e) setError(e.message);
+      else onAuth();
     }
     setLoading(false);
   };
@@ -550,16 +863,9 @@ function AuthScreen({ onAuth }: { onAuth: () => void }) {
   const handleForgotPassword = async () => {
     setForgotError(''); setForgotSuccess(''); setForgotLoading(true);
     if (!forgotEmail) { setForgotError('Please enter your email.'); setForgotLoading(false); return; }
-
-    const { error: e } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/`,
-    });
-
-    if (e) { setForgotError(e.message); }
-    else { 
-      setForgotSuccess('Password reset email sent! Check your inbox.');
-      setTimeout(() => { setShowForgotPassword(false); setForgotEmail(''); }, 3000);
-    }
+    const { error: e } = await supabase.auth.resetPasswordForEmail(forgotEmail, { redirectTo: `${window.location.origin}/` });
+    if (e) setForgotError(e.message);
+    else { setForgotSuccess('Password reset email sent! Check your inbox.'); setTimeout(() => { setShowForgotPassword(false); setForgotEmail(''); }, 3000); }
     setForgotLoading(false);
   };
 
@@ -569,12 +875,9 @@ function AuthScreen({ onAuth }: { onAuth: () => void }) {
       <div style={{ width: '100%', maxWidth: 420 }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{ fontSize: 11, color: '#2d3050', letterSpacing: '0.18em', marginBottom: 14, fontWeight: 600 }}>AI AUTOMATION MASTERY ROADMAP — v2.0</div>
-          <h1 style={{ fontSize: 32, fontWeight: 800, background: 'linear-gradient(135deg, #e2e8f0 0%, #818cf8 50%, #f472b6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1.2 }}>
-            FROM ZERO TO<br />FREELANCE AI ENGINEER
-          </h1>
+          <h1 style={{ fontSize: 32, fontWeight: 800, background: 'linear-gradient(135deg, #e2e8f0 0%, #818cf8 50%, #f472b6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1.2 }}>FROM ZERO TO<br />FREELANCE AI ENGINEER</h1>
           <p style={{ marginTop: 12, color: '#475569', fontSize: 14 }}>Track your progress. Own your journey.</p>
         </div>
-
         <div style={{ background: '#0c0d17', border: '1px solid #1e2030', borderRadius: 16, padding: 32 }}>
           {!showForgotPassword ? (
             <>
@@ -586,33 +889,22 @@ function AuthScreen({ onAuth }: { onAuth: () => void }) {
                   </button>
                 ))}
               </div>
-
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>EMAIL</label>
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handle()}
-                    placeholder="you@example.com"
-                    style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handle()} placeholder="you@example.com" style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
                 </div>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>PASSWORD</label>
-                  <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handle()}
-                    placeholder="Min. 6 characters"
-                    style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                  <input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handle()} placeholder="Min. 6 characters" style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
                 </div>
-
                 {error && <div style={{ fontSize: 13, color: '#f87171', background: '#f8717115', border: '1px solid #f8717130', borderRadius: 8, padding: '10px 14px' }}>{error}</div>}
                 {success && <div style={{ fontSize: 13, color: '#34d399', background: '#34d39915', border: '1px solid #34d39930', borderRadius: 8, padding: '10px 14px' }}>{success}</div>}
-
-                <button onClick={handle} disabled={loading}
-                  style={{ width: '100%', padding: '12px 0', borderRadius: 8, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg, #818cf8, #f472b6)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'Inter, sans-serif', opacity: loading ? 0.7 : 1, marginTop: 4 }}>
+                <button onClick={handle} disabled={loading} style={{ width: '100%', padding: '12px 0', borderRadius: 8, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg, #818cf8, #f472b6)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'Inter, sans-serif', opacity: loading ? 0.7 : 1, marginTop: 4 }}>
                   {loading ? 'Please wait...' : mode === 'login' ? 'Log In →' : 'Create Account →'}
                 </button>
-
                 {mode === 'login' && (
-                  <button onClick={() => setShowForgotPassword(true)} style={{ width: '100%', padding: '10px 0', borderRadius: 8, border: 'none', background: 'transparent', color: '#818cf8', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif', textDecoration: 'none', transition: 'all 0.15s' }} onMouseEnter={e => (e.currentTarget.style.color = '#f472b6')} onMouseLeave={e => (e.currentTarget.style.color = '#818cf8')}>
+                  <button onClick={() => setShowForgotPassword(true)} style={{ width: '100%', padding: '10px 0', borderRadius: 8, border: 'none', background: 'transparent', color: '#818cf8', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
                     Forgot Password?
                   </button>
                 )}
@@ -620,38 +912,24 @@ function AuthScreen({ onAuth }: { onAuth: () => void }) {
             </>
           ) : (
             <>
-              <div style={{ marginBottom: 20 }}>
-                <button onClick={() => { setShowForgotPassword(false); setForgotError(''); setForgotSuccess(''); }} style={{ background: 'transparent', border: 'none', color: '#818cf8', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginBottom: 20 }}>
-                  ← Back to Login
-                </button>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', marginBottom: 8 }}>Reset Password</div>
-                <div style={{ fontSize: 13, color: '#475569' }}>Enter your email and we'll send you a password reset link.</div>
-              </div>
-
+              <button onClick={() => { setShowForgotPassword(false); setForgotError(''); setForgotSuccess(''); }} style={{ background: 'transparent', border: 'none', color: '#818cf8', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginBottom: 20 }}>← Back to Login</button>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', marginBottom: 8 }}>Reset Password</div>
+              <div style={{ fontSize: 13, color: '#475569', marginBottom: 16 }}>Enter your email and we'll send you a password reset link.</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>EMAIL</label>
-                  <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleForgotPassword()}
-                    placeholder="your@email.com"
-                    style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                  <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleForgotPassword()} placeholder="your@email.com" style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
                 </div>
-
                 {forgotError && <div style={{ fontSize: 13, color: '#f87171', background: '#f8717115', border: '1px solid #f8717130', borderRadius: 8, padding: '10px 14px' }}>{forgotError}</div>}
                 {forgotSuccess && <div style={{ fontSize: 13, color: '#34d399', background: '#34d39915', border: '1px solid #34d39930', borderRadius: 8, padding: '10px 14px' }}>{forgotSuccess}</div>}
-
-                <button onClick={handleForgotPassword} disabled={forgotLoading}
-                  style={{ width: '100%', padding: '12px 0', borderRadius: 8, border: 'none', cursor: forgotLoading ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg, #818cf8, #f472b6)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'Inter, sans-serif', opacity: forgotLoading ? 0.7 : 1, marginTop: 4 }}>
+                <button onClick={handleForgotPassword} disabled={forgotLoading} style={{ width: '100%', padding: '12px 0', borderRadius: 8, border: 'none', cursor: forgotLoading ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg, #818cf8, #f472b6)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'Inter, sans-serif', opacity: forgotLoading ? 0.7 : 1 }}>
                   {forgotLoading ? 'Sending...' : 'Send Reset Link →'}
                 </button>
               </div>
             </>
           )}
         </div>
-
-        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: '#1e2030' }}>
-          Your progress is saved to your account across all devices.
-        </div>
+        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: '#1e2030' }}>Your progress is saved to your account across all devices.</div>
       </div>
     </div>
   );
@@ -662,7 +940,6 @@ function AuthScreen({ onAuth }: { onAuth: () => void }) {
 export default function Roadmap() {
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
-
   const [open, setOpen] = useState<string | null>(null);
   const [filter, setFilter] = useState('ALL');
   const [completedTopics, setCompletedTopics] = useState<Record<string, boolean[]>>({});
@@ -674,37 +951,26 @@ export default function Roadmap() {
   const [celebration, setCelebration] = useState<string | null>(null);
   const [allExpanded, setAllExpanded] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null);
+
+  // AI modal state
+  const [learnModal, setLearnModal] = useState<{ stageNum: string; topicIdx: number } | null>(null);
+  const [quizModal, setQuizModal] = useState<string | null>(null); // stageNum
+
   const stageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    // Don't auto-login if we're on the reset password page
-    if (window.location.hash.includes('type=recovery')) {
-      setAuthLoading(false);
-      return;
-    }
-
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
-      setAuthLoading(false);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
+    if (window.location.hash.includes('type=recovery')) { setAuthLoading(false); return; }
+    supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user ?? null); setAuthLoading(false); });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user ?? null); });
     return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data, error } = await supabase
-        .from('progress')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
+      const { data, error } = await supabase.from('progress').select('*').eq('user_id', user.id).single();
       if (error && error.code !== 'PGRST116') { console.error(error); return; }
-
       if (data) {
         setCompletedTopics(data.completed_topics || {});
         setCompletedStages(data.completed_stages || []);
@@ -712,13 +978,11 @@ export default function Roadmap() {
         setNotes(data.notes || {});
         setStreak(data.streak || 0);
         setLastActive(data.last_active || null);
-
         const today = new Date().toDateString();
         const yesterday = new Date(Date.now() - 86400000).toDateString();
         if (data.last_active !== today) {
           const newStreak = data.last_active === yesterday ? (data.streak || 0) + 1 : 1;
-          setStreak(newStreak);
-          setLastActive(today);
+          setStreak(newStreak); setLastActive(today);
         }
       }
     })();
@@ -731,37 +995,27 @@ export default function Roadmap() {
     saveTimer.current = setTimeout(async () => {
       const today = new Date().toDateString();
       const { error } = await supabase.from('progress').upsert({
-        user_id: user.id,
-        completed_topics: completedTopics,
-        completed_stages: completedStages,
-        current_stage: currentStage,
-        notes,
-        streak,
-        last_active: today,
-        updated_at: new Date().toISOString(),
-        ...updates,
+        user_id: user.id, completed_topics: completedTopics, completed_stages: completedStages,
+        current_stage: currentStage, notes, streak, last_active: today,
+        updated_at: new Date().toISOString(), ...updates,
       }, { onConflict: 'user_id' });
       setSaveStatus(error ? 'error' : 'saved');
       setTimeout(() => setSaveStatus(null), 2000);
     }, 800);
   };
 
-  const saveTopics = (t: Record<string, boolean[]>) => {
-    setCompletedTopics(t);
-    saveToSupabase({ completed_topics: t });
-  };
-  const saveStages = (s: string[]) => {
-    setCompletedStages(s);
-    saveToSupabase({ completed_stages: s });
-  };
-  const saveNote = (num: string, val: string) => {
-    const n = { ...notes, [num]: val };
-    setNotes(n);
-    saveToSupabase({ notes: n });
-  };
-  const saveCurrent = (num: string | null) => {
-    setCurrentStage(num);
-    saveToSupabase({ current_stage: num });
+  const saveTopics = (t: Record<string, boolean[]>) => { setCompletedTopics(t); saveToSupabase({ completed_topics: t }); };
+  const saveStages = (s: string[]) => { setCompletedStages(s); saveToSupabase({ completed_stages: s }); };
+  const saveNote = (num: string, val: string) => { const n = { ...notes, [num]: val }; setNotes(n); saveToSupabase({ notes: n }); };
+  const saveCurrent = (num: string | null) => { setCurrentStage(num); saveToSupabase({ current_stage: num }); };
+
+  const completeTopic = (stageNum: string, idx: number, totalTopics: number) => {
+    const prev = completedTopics[stageNum] || Array(totalTopics).fill(false);
+    const next = [...prev];
+    next[idx] = true;
+    const updated = { ...completedTopics, [stageNum]: next };
+    saveTopics(updated);
+    setLearnModal(null);
   };
 
   const toggleTopic = (stageNum: string, idx: number, totalTopics: number) => {
@@ -770,12 +1024,6 @@ export default function Roadmap() {
     next[idx] = !next[idx];
     const updated = { ...completedTopics, [stageNum]: next };
     saveTopics(updated);
-    if (next.every(Boolean) && !completedStages.includes(stageNum)) {
-      const newStages = [...completedStages, stageNum];
-      saveStages(newStages);
-      setCelebration(stageNum);
-      setTimeout(() => setCelebration(null), 4000);
-    }
   };
 
   const toggleStage = (stageNum: string) => {
@@ -788,10 +1036,17 @@ export default function Roadmap() {
     }
   };
 
-  const stageProgress = (stageNum: string) => {
-    const t = completedTopics[stageNum] || [];
-    return t.filter(Boolean).length;
+  const completeStageFromQuiz = (stageNum: string) => {
+    if (!completedStages.includes(stageNum)) {
+      const newStages = [...completedStages, stageNum];
+      saveStages(newStages);
+      setCelebration(stageNum);
+      setTimeout(() => setCelebration(null), 4000);
+    }
+    setQuizModal(null);
   };
+
+  const stageProgress = (stageNum: string) => (completedTopics[stageNum] || []).filter(Boolean).length;
 
   const totalTopicsAll = stages.reduce((sum, s) => sum + s.topics.length, 0);
   const doneTopicsAll = stages.reduce((sum, s) => sum + (completedTopics[s.number] || []).filter(Boolean).length, 0);
@@ -804,11 +1059,6 @@ export default function Roadmap() {
       stageRefs.current[currentStage]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setOpen(currentStage);
     }
-  };
-
-  const toggleExpandAll = () => {
-    if (allExpanded) { setOpen(null); setAllExpanded(false); }
-    else { setAllExpanded(true); }
   };
 
   const tags = ['ALL', 'FOUNDATION', 'LANGUAGE', 'TOOLS', 'APIs', 'DATA', 'PERFORMANCE', 'DEPLOYMENT', 'WEB', 'AI CORE', 'INTEGRATIONS', 'STORAGE', 'NO-CODE+', 'SYSTEMS', 'PORTFOLIO', 'BUSINESS'];
@@ -831,28 +1081,17 @@ export default function Roadmap() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    setCompletedTopics({});
-    setCompletedStages([]);
-    setCurrentStage(null);
-    setNotes({});
-    setStreak(0);
-    setLastActive(null);
+    setCompletedTopics({}); setCompletedStages([]); setCurrentStage(null);
+    setNotes({}); setStreak(0); setLastActive(null);
   };
 
-  if (authLoading) {
-    return (
-      <div style={{ fontFamily: 'Inter, sans-serif', background: '#07080f', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 14, color: '#475569' }}>Loading...</div>
-      </div>
-    );
-  }
-
-// Check if on reset password page FIRST (before checking user)
-  if (window.location.hash.includes('type=recovery')) {
-    return <ResetPasswordScreen />;
-  }
-
+  if (authLoading) return <div style={{ fontFamily: 'Inter, sans-serif', background: '#07080f', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ fontSize: 14, color: '#475569' }}>Loading...</div></div>;
+  if (window.location.hash.includes('type=recovery')) return <ResetPasswordScreen />;
   if (!user) return <AuthScreen onAuth={() => {}} />;
+
+  // Find learn modal data
+  const learnStage = learnModal ? stages.find(s => s.number === learnModal.stageNum) : null;
+  const quizStage = quizModal ? stages.find(s => s.number === quizModal) : null;
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", background: '#07080f', minHeight: '100vh', color: '#e2e8f0' }}>
@@ -868,11 +1107,13 @@ export default function Roadmap() {
         .topic-row:hover { background: rgba(255,255,255,0.02); border-radius: 6px; }
         .check-box { transition: all 0.15s ease; cursor: pointer; flex-shrink: 0; }
         .check-box:hover { transform: scale(1.1); }
+        .learn-btn:hover { opacity: 0.85; }
         textarea { resize: vertical; font-family: 'Inter', sans-serif; }
         textarea:focus { outline: none; }
         .expand-arrow { transition: transform 0.2s ease; display: inline-block; }
         @keyframes celebIn { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
         .celeb { animation: celebIn 0.4s ease, fadeOut 0.5s ease 3.5s forwards; }
         @media (max-width: 600px) {
           .topic-grid { grid-template-columns: 1fr !important; }
@@ -883,6 +1124,25 @@ export default function Roadmap() {
         }
       `}</style>
 
+      {/* Modals */}
+      {learnModal && learnStage && (
+        <TopicLearnModal
+          topic={learnStage.topics[learnModal.topicIdx]}
+          stageTitle={learnStage.title}
+          stageColor={learnStage.color}
+          onClose={() => setLearnModal(null)}
+          onComplete={() => completeTopic(learnModal.stageNum, learnModal.topicIdx, learnStage.topics.length)}
+        />
+      )}
+      {quizModal && quizStage && (
+        <StageQuizModal
+          stage={quizStage}
+          onClose={() => setQuizModal(null)}
+          onPass={() => completeStageFromQuiz(quizModal)}
+        />
+      )}
+
+      {/* Top bar */}
       <div style={{ position: 'sticky', top: 0, zIndex: 100, background: '#07080f', borderBottom: '1px solid #1a1d2e', padding: '10px 24px' }}>
         <div style={{ maxWidth: 960, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ flex: 1, height: 6, background: '#1a1d2e', borderRadius: 99, overflow: 'hidden' }}>
@@ -900,13 +1160,12 @@ export default function Roadmap() {
           {saveStatus === 'error' && <span style={{ fontSize: 11, color: '#f87171' }}>Save failed</span>}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 4 }}>
             <span style={{ fontSize: 11, color: '#374151', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</span>
-            <button onClick={handleLogout} style={{ background: 'transparent', border: '1px solid #1e2030', color: '#475569', fontSize: 11, padding: '3px 9px', borderRadius: 5, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>
-              Log out
-            </button>
+            <button onClick={handleLogout} style={{ background: 'transparent', border: '1px solid #1e2030', color: '#475569', fontSize: 11, padding: '3px 9px', borderRadius: 5, cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Log out</button>
           </div>
         </div>
       </div>
 
+      {/* Celebration */}
       {celebration && (
         <div className="celeb" style={{ position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)', zIndex: 999, background: '#0c0d17', border: '1px solid #818cf8', borderRadius: 12, padding: '16px 24px', textAlign: 'center', maxWidth: 340, boxShadow: '0 0 40px #818cf840' }}>
           <div style={{ fontSize: 28, marginBottom: 6 }}>🎉</div>
@@ -916,16 +1175,15 @@ export default function Roadmap() {
       )}
 
       <div style={{ maxWidth: 960, margin: '0 auto', padding: '40px 20px' }}>
-
+        {/* Header */}
         <div style={{ marginBottom: 40, borderBottom: '1px solid #1e2030', paddingBottom: 32 }}>
           <div style={{ fontSize: 11, color: '#2d3050', letterSpacing: '0.18em', marginBottom: 14, fontWeight: 600 }}>AI AUTOMATION MASTERY ROADMAP — v2.0</div>
           <h1 style={{ fontSize: 'clamp(30px, 6vw, 54px)', fontWeight: 800, lineHeight: 1.1, background: 'linear-gradient(135deg, #e2e8f0 0%, #818cf8 50%, #f472b6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             FROM ZERO TO<br />FREELANCE AI ENGINEER
           </h1>
           <p style={{ marginTop: 16, color: '#64748b', fontSize: 15, lineHeight: 1.8, maxWidth: 580 }}>
-            15 stages. Every skill, tool, and critical gap — track your progress and become a freelance AI automation engineer.
+            15 stages. Click any topic to get an AI explanation + practice problems. Complete all topics, then take the stage quiz.
           </p>
-
           <div className="header-stats" style={{ display: 'flex', gap: 28, marginTop: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
             {[['15', 'Total Stages'], [`${weeksLeft}w`, 'Weeks Left'], [`${streak}🔥`, 'Day Streak'], [completedStages.length > 0 ? `${completedStages.length}` : '0', 'Completed']].map(([num, label]) => (
               <div key={label}>
@@ -942,8 +1200,10 @@ export default function Roadmap() {
           </div>
         </div>
 
+        {/* Controls */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-          <button onClick={toggleExpandAll} style={{ background: '#0f1117', border: '1px solid #1a1d2e', color: '#94a3b8', fontSize: 12, fontWeight: 600, padding: '6px 14px', borderRadius: 6, cursor: 'pointer' }}>
+          <button onClick={() => { if (allExpanded) { setOpen(null); setAllExpanded(false); } else setAllExpanded(true); }}
+            style={{ background: '#0f1117', border: '1px solid #1a1d2e', color: '#94a3b8', fontSize: 12, fontWeight: 600, padding: '6px 14px', borderRadius: 6, cursor: 'pointer' }}>
             {allExpanded ? '↑ Collapse All' : '↓ Expand All'}
           </button>
           {currentStage && (
@@ -953,6 +1213,7 @@ export default function Roadmap() {
           )}
         </div>
 
+        {/* Filter bar */}
         <div className="filter-bar" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 28 }}>
           {tags.map(tag => (
             <button key={tag} className="filter-btn" onClick={() => setFilter(tag)}
@@ -962,6 +1223,7 @@ export default function Roadmap() {
           ))}
         </div>
 
+        {/* Stages */}
         {filter === 'ALL' ? (
           STAGE_GROUPS.map(group => {
             const groupStages = stages.filter(s => group.range.includes(s.number));
@@ -992,7 +1254,7 @@ export default function Roadmap() {
 
         <div style={{ marginTop: 40, paddingTop: 20, borderTop: '1px solid #1a1d2e', textAlign: 'center' }}>
           <div style={{ fontSize: 12, color: '#1e2030', letterSpacing: '0.1em', fontWeight: 500 }}>
-            CLICK ANY STAGE TO EXPAND · CHECK OFF TOPICS AS YOU LEARN · BUILD IN ORDER
+            CLICK ANY TOPIC TO LEARN · COMPLETE ALL TOPICS · TAKE THE STAGE QUIZ TO FINISH
           </div>
         </div>
       </div>
@@ -1005,6 +1267,7 @@ export default function Roadmap() {
     const stagePct = stage.topics.length > 0 ? Math.round((topicsDone / stage.topics.length) * 100) : 0;
     const stageOpen = isOpen(stage.number);
     const topicsState = completedTopics[stage.number] || Array(stage.topics.length).fill(false);
+    const allTopicsDone = stage.topics.length > 0 && topicsState.every(Boolean);
 
     const borderColor = status === 'done' ? '#34d399' : status === 'active' ? stage.color : '#1e2030';
     const bgColor = status === 'done' ? '#0a1a12' : status === 'active' ? '#0d0d1f' : '#0c0d17';
@@ -1016,24 +1279,12 @@ export default function Roadmap() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '18px 20px', cursor: 'pointer' }}
           onClick={() => { if (!allExpanded) setOpen(stageOpen && !allExpanded ? null : stage.number); }}>
-
-          <div style={{ fontSize: 18, fontWeight: 800, color: stage.color, minWidth: 32, lineHeight: 1, opacity: status === 'done' ? 1 : 0.6 }}>
-            {stage.number}
-          </div>
-
+          <div style={{ fontSize: 18, fontWeight: 800, color: stage.color, minWidth: 32, lineHeight: 1, opacity: status === 'done' ? 1 : 0.6 }}>{stage.number}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span className="stage-title" style={{ fontSize: 16, fontWeight: 700, color: status === 'done' ? '#94a3b8' : '#e2e8f0', textDecoration: status === 'done' ? 'line-through' : 'none', textDecorationColor: '#34d399' }}>
-                {stage.title}
-              </span>
-              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', padding: '2px 7px', borderRadius: 4, background: stage.color + '18', color: stage.color, border: `1px solid ${stage.color}35` }}>
-                {stage.tag}
-              </span>
-              {status === 'active' && (
-                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: stage.color + '25', color: stage.color, border: `1px solid ${stage.color}60`, letterSpacing: '0.06em' }}>
-                  IN PROGRESS
-                </span>
-              )}
+              <span className="stage-title" style={{ fontSize: 16, fontWeight: 700, color: status === 'done' ? '#94a3b8' : '#e2e8f0', textDecoration: status === 'done' ? 'line-through' : 'none', textDecorationColor: '#34d399' }}>{stage.title}</span>
+              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', padding: '2px 7px', borderRadius: 4, background: stage.color + '18', color: stage.color, border: `1px solid ${stage.color}35` }}>{stage.tag}</span>
+              {status === 'active' && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: stage.color + '25', color: stage.color, border: `1px solid ${stage.color}60`, letterSpacing: '0.06em' }}>IN PROGRESS</span>}
               {status === 'done' && <span style={{ fontSize: 13 }}>✅</span>}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 5 }}>
@@ -1048,7 +1299,6 @@ export default function Roadmap() {
               )}
             </div>
           </div>
-
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {status !== 'done' && (
               <button onClick={e => { e.stopPropagation(); saveCurrent(currentStage === stage.number ? null : stage.number); }}
@@ -1072,7 +1322,6 @@ export default function Roadmap() {
 
         {stageOpen && (
           <div style={{ padding: '0 20px 24px', borderTop: `1px solid ${stage.color}18` }}>
-
             <div style={{ background: stage.color + '08', border: `1px solid ${stage.color}20`, borderLeft: `3px solid ${stage.color}`, borderRadius: 8, padding: '13px 16px', margin: '16px 0' }}>
               <div style={{ fontSize: 11, color: stage.color, letterSpacing: '0.12em', marginBottom: 6, fontWeight: 600 }}>WHY THIS STAGE MATTERS</div>
               <div style={{ fontSize: 15, color: '#94a3b8', lineHeight: 1.7 }}>{stage.why}</div>
@@ -1080,23 +1329,42 @@ export default function Roadmap() {
 
             {stage.topics.length > 0 && (
               <div style={{ marginBottom: 22 }}>
-                <div style={{ fontSize: 11, color: '#475569', letterSpacing: '0.12em', marginBottom: 12, fontWeight: 600 }}>TOPICS TO MASTER</div>
+                <div style={{ fontSize: 11, color: '#475569', letterSpacing: '0.12em', marginBottom: 12, fontWeight: 600 }}>TOPICS TO MASTER — click a topic to learn it with AI</div>
                 <div className="topic-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: 6 }}>
                   {stage.topics.map((t, idx) => (
                     <div key={idx} className="topic-row"
-                      style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '6px 4px', cursor: 'pointer' }}
-                      onClick={() => toggleTopic(stage.number, idx, stage.topics.length)}>
-                      <div className="check-box"
+                      style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '6px 4px' }}>
+                      <div className="check-box" onClick={() => toggleTopic(stage.number, idx, stage.topics.length)}
                         style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${topicsState[idx] ? stage.color : '#2d3050'}`, background: topicsState[idx] ? stage.color + '25' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: stage.color, marginTop: 2, flexShrink: 0 }}>
                         {topicsState[idx] ? '✓' : ''}
                       </div>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flex: 1 }}>
                         <span style={{ fontSize: 11, color: stage.color, opacity: 0.5, minWidth: 20, fontWeight: 600, marginTop: 2 }}>{String(idx + 1).padStart(2, '0')}</span>
-                        <span style={{ fontSize: 14, color: topicsState[idx] ? '#374151' : '#cbd5e1', lineHeight: 1.6, textDecoration: topicsState[idx] ? 'line-through' : 'none', textDecorationColor: '#374151' }}>{t}</span>
+                        <span style={{ fontSize: 14, color: topicsState[idx] ? '#374151' : '#cbd5e1', lineHeight: 1.6, textDecoration: topicsState[idx] ? 'line-through' : 'none', textDecorationColor: '#374151', flex: 1 }}>{t}</span>
                       </div>
+                      <button className="learn-btn" onClick={() => setLearnModal({ stageNum: stage.number, topicIdx: idx })}
+                        style={{ background: topicsState[idx] ? '#1a1d2e' : stage.color + '20', border: `1px solid ${topicsState[idx] ? '#1e2030' : stage.color + '50'}`, color: topicsState[idx] ? '#374151' : stage.color, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, marginTop: 2 }}>
+                        {topicsState[idx] ? '✓ Done' : '▶ Learn'}
+                      </button>
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Stage Quiz CTA */}
+            {stage.topics.length > 0 && status !== 'done' && (
+              <div style={{ margin: '16px 0', padding: '14px 16px', borderRadius: 10, background: allTopicsDone ? stage.color + '12' : '#07080f', border: `1px solid ${allTopicsDone ? stage.color + '40' : '#1e2030'}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: allTopicsDone ? stage.color : '#374151', marginBottom: 2 }}>
+                    {allTopicsDone ? '🎯 All topics complete! Take the stage quiz.' : `Complete all ${stage.topics.length} topics to unlock the stage quiz`}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#374151' }}>Score 4/5 to finish the stage</div>
+                </div>
+                <button onClick={() => allTopicsDone && setQuizModal(stage.number)} disabled={!allTopicsDone}
+                  style={{ background: allTopicsDone ? `linear-gradient(135deg, ${stage.color}, #818cf8)` : '#1e2030', border: 'none', color: allTopicsDone ? '#07080f' : '#374151', fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 8, cursor: allTopicsDone ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+                  {allTopicsDone ? 'Take Quiz →' : `${topicsDone}/${stage.topics.length} done`}
+                </button>
               </div>
             )}
 
@@ -1124,12 +1392,9 @@ export default function Roadmap() {
 
             <div>
               <div style={{ fontSize: 11, color: '#475569', letterSpacing: '0.12em', marginBottom: 8, fontWeight: 600 }}>MY NOTES & RESOURCES</div>
-              <textarea
-                value={notes[stage.number] || ''}
-                onChange={e => saveNote(stage.number, e.target.value)}
+              <textarea value={notes[stage.number] || ''} onChange={e => saveNote(stage.number, e.target.value)}
                 placeholder="Add your notes, resource links, or thoughts here..."
-                style={{ width: '100%', minHeight: 80, background: '#0f1117', border: '1px solid #1a1d2e', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#94a3b8', lineHeight: 1.6 }}
-              />
+                style={{ width: '100%', minHeight: 80, background: '#0f1117', border: '1px solid #1a1d2e', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#94a3b8', lineHeight: 1.6 }} />
             </div>
           </div>
         )}
