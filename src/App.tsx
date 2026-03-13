@@ -394,13 +394,12 @@ function ResetPasswordScreen() {
   const [success, setSuccess] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
 
-  useEffect(() => {
-  const hash = window.location.hash.substring(1); // Remove the '#'
-  const params = new URLSearchParams(hash);
-  const access_token = params.get('access_token');
+useEffect(() => {
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const access_token = params.get('access_token');
     
     if (access_token) {
-      // Set the session with the token from the email link
       supabase.auth.setSession({
         access_token: access_token,
         refresh_token: params.get('refresh_token') || '',
@@ -842,13 +841,8 @@ export default function Roadmap() {
     );
   }
 
-<<<<<<< HEAD
-  // Check if user is on reset password page (using hash routing)
+// Check if on reset password page
   if (window.location.hash.includes('type=recovery')) {
-=======
-  // Check if on reset password page
-  if (window.location.hash.includes('type=recovery')) {
->>>>>>> af0e87e62e9b3f28b7297cf19fd31a0f3af1bde1
     return <ResetPasswordScreen />;
   }
 
