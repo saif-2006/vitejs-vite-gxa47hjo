@@ -678,6 +678,12 @@ export default function Roadmap() {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    // Don't auto-login if we're on the reset password page
+    if (window.location.hash.includes('type=recovery')) {
+      setAuthLoading(false);
+      return;
+    }
+
     supabase.auth.getSession().then(({ data }) => {
       setUser(data.session?.user ?? null);
       setAuthLoading(false);
@@ -841,7 +847,7 @@ export default function Roadmap() {
     );
   }
 
-// Check if on reset password page
+// Check if on reset password page FIRST (before checking user)
   if (window.location.hash.includes('type=recovery')) {
     return <ResetPasswordScreen />;
   }
