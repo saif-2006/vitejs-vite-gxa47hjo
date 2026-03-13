@@ -392,6 +392,30 @@ function ResetPasswordScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+
+  useEffect(() => {
+    // Extract token from URL hash
+    const hash = window.location.hash;
+    const params = new URLSearchParams(hash.substring(1));
+    const access_token = params.get('access_token');
+    
+    if (access_token) {
+      // Set the session with the token from the email link
+      supabase.auth.setSession({
+        access_token: access_token,
+        refresh_token: params.get('refresh_token') || '',
+      }).then(({ error: e }) => {
+        if (e) {
+          setError('Invalid or expired reset link. Please request a new one.');
+        } else {
+          setSessionReady(true);
+        }
+      });
+    } else {
+      setError('Invalid reset link. Please request a new one.');
+    }
+  }, []);
 
   const handleResetPassword = async () => {
     setError('');
@@ -435,33 +459,47 @@ function ResetPasswordScreen() {
 
         <div style={{ background: '#0c0d17', border: '1px solid #1e2030', borderRadius: 16, padding: 32 }}>
           {!success ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>NEW PASSWORD</label>
-                <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleResetPassword()}
-                  placeholder="Min. 6 characters"
-                  style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>CONFIRM PASSWORD</label>
-                <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleResetPassword()}
-                  placeholder="Re-enter your password"
-                  style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
-              </div>
+            <>
+              {!sessionReady && !error && (
+                <div style={{ textAlign: 'center', color: '#475569', fontSize: 14, padding: '20px 0' }}>
+                  Verifying reset link...
+                </div>
+              )}
+              {error && (
+                <div style={{ fontSize: 13, color: '#f87171', background: '#f8717115', border: '1px solid #f8717130', borderRadius: 8, padding: '10px 14px', marginBottom: 16 }}>
+                  {error}
+                </div>
+              )}
+              {sessionReady && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>NEW PASSWORD</label>
+                    <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleResetPassword()}
+                      placeholder="Min. 6 characters"
+                      style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>CONFIRM PASSWORD</label>
+                    <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleResetPassword()}
+                      placeholder="Re-enter your password"
+                      style={{ width: '100%', background: '#07080f', border: '1px solid #1e2030', borderRadius: 8, padding: '11px 14px', fontSize: 14, color: '#e2e8f0', fontFamily: 'Inter, sans-serif', outline: 'none' }} />
+                  </div>
 
-              {error && <div style={{ fontSize: 13, color: '#f87171', background: '#f8717115', border: '1px solid #f8717130', borderRadius: 8, padding: '10px 14px' }}>{error}</div>}
+                  {error && <div style={{ fontSize: 13, color: '#f87171', background: '#f8717115', border: '1px solid #f8717130', borderRadius: 8, padding: '10px 14px' }}>{error}</div>}
 
-              <button onClick={handleResetPassword} disabled={loading}
-                style={{ width: '100%', padding: '12px 0', borderRadius: 8, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg, #818cf8, #f472b6)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'Inter, sans-serif', opacity: loading ? 0.7 : 1, marginTop: 4 }}>
-                {loading ? 'Resetting...' : 'Reset Password →'}
-              </button>
+                  <button onClick={handleResetPassword} disabled={loading}
+                    style={{ width: '100%', padding: '12px 0', borderRadius: 8, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg, #818cf8, #f472b6)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'Inter, sans-serif', opacity: loading ? 0.7 : 1, marginTop: 4 }}>
+                    {loading ? 'Resetting...' : 'Reset Password →'}
+                  </button>
 
-              <a href="/" style={{ textAlign: 'center', color: '#818cf8', textDecoration: 'none', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-                Back to Login
-              </a>
-            </div>
+                  <a href="/" style={{ textAlign: 'center', color: '#818cf8', textDecoration: 'none', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                    Back to Login
+                  </a>
+                </div>
+              )}
+            </>
           ) : (
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
