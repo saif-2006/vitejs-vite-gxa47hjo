@@ -395,10 +395,9 @@ function ResetPasswordScreen() {
   const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
-    // Extract token from URL hash
-    const hash = window.location.hash;
-    const params = new URLSearchParams(hash.substring(1));
-    const access_token = params.get('access_token');
+  const hash = window.location.hash.substring(1); // Remove the '#'
+  const params = new URLSearchParams(hash);
+  const access_token = params.get('access_token');
     
     if (access_token) {
       // Set the session with the token from the email link
@@ -843,8 +842,13 @@ export default function Roadmap() {
     );
   }
 
+<<<<<<< HEAD
+  // Check if user is on reset password page (using hash routing)
+  if (window.location.hash.includes('type=recovery')) {
+=======
   // Check if on reset password page
   if (window.location.hash.includes('type=recovery')) {
+>>>>>>> af0e87e62e9b3f28b7297cf19fd31a0f3af1bde1
     return <ResetPasswordScreen />;
   }
 
