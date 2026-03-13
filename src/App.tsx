@@ -421,7 +421,7 @@ function AuthScreen({ onAuth }: { onAuth: () => void }) {
     if (!forgotEmail) { setForgotError('Please enter your email.'); setForgotLoading(false); return; }
 
     const { error: e } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/#/auth/reset-password`,
+      redirectTo: `${window.location.origin}/`,
     });
 
     if (e) { setForgotError(e.message); }
@@ -539,6 +539,22 @@ function ResetPasswordScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    const params = new URLSearchParams(hash.replace('#', ''));
+    const access_token = params.get('access_token');
+    const refresh_token = params.get('refresh_token');
+    if (access_token && refresh_token) {
+      supabase.auth.setSession({ access_token, refresh_token }).then(({ error: e }) => {
+        if (e) setError('Invalid or expired reset link. Please request a new one.');
+        else setSessionReady(true);
+      });
+    } else {
+      setError('Invalid reset link. Please request a new one.');
+    }
+  }, []);
 
   const handleResetPassword = async () => {
     setError('');
@@ -581,7 +597,13 @@ function ResetPasswordScreen() {
         </div>
 
         <div style={{ background: '#0c0d17', border: '1px solid #1e2030', borderRadius: 16, padding: 32 }}>
-          {!success ? (
+          {!sessionReady && !error && (
+            <div style={{ textAlign: 'center', color: '#475569', fontSize: 14, padding: '20px 0' }}>Verifying reset link...</div>
+          )}
+          {error && !success && (
+            <div style={{ fontSize: 13, color: '#f87171', background: '#f8717115', border: '1px solid #f8717130', borderRadius: 8, padding: '10px 14px', marginBottom: 16 }}>{error}</div>
+          )}
+          {sessionReady && !success ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>NEW PASSWORD</label>
@@ -824,6 +846,15 @@ export default function Roadmap() {
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", background: '#07080f', minHeight: '100vh', color: '#e2e8f0' }}>
       <style>{`
+<<<<<<< HEAD
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #0f1117; } ::-webkit-scrollbar-thumb { background: #2d2f3e; border-radius: 2px; }
+        .stage-card { transition: all 0.2s ease; border: 1px solid #1e2030; }
+        .stage-card:hover { border-color: #2d3050; transform: translateY(-1px); }
+        .filter-btn { transition: all 0.15s ease; cursor: pointer; border: none; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.08em; padding: 5px 10px; border-radius: 4px; }
+        .filter-btn:hover { opacity: 0.85; }
+=======
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px; }
@@ -837,6 +868,7 @@ export default function Roadmap() {
         .check-box:hover { transform: scale(1.1); }
         textarea { resize: vertical; font-family: 'Inter', sans-serif; }
         textarea:focus { outline: none; }
+>>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
         .expand-arrow { transition: transform 0.2s ease; display: inline-block; }
         @keyframes celebIn { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
@@ -850,11 +882,31 @@ export default function Roadmap() {
         }
       `}</style>
 
+<<<<<<< HEAD
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <div
+          style={{
+            marginBottom: 48,
+            borderBottom: '1px solid #1e2030',
+            paddingBottom: 32,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 13,
+              color: '#2d3050',
+              letterSpacing: '0.18em',
+              marginBottom: 14,
+            }}
+          >
+            AI AUTOMATION MASTERY ROADMAP — v2.0
+=======
       {/* Sticky progress bar */}
       <div style={{ position: 'sticky', top: 0, zIndex: 100, background: '#07080f', borderBottom: '1px solid #1a1d2e', padding: '10px 24px' }}>
         <div style={{ maxWidth: 960, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ flex: 1, height: 6, background: '#1a1d2e', borderRadius: 99, overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${overallPct}%`, background: 'linear-gradient(90deg, #818cf8, #f472b6)', borderRadius: 99, transition: 'width 0.4s ease' }} />
+>>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
           </div>
           <span style={{ fontSize: 13, fontWeight: 700, color: '#818cf8', minWidth: 42 }}>{overallPct}%</span>
           <span style={{ fontSize: 12, color: '#374151', whiteSpace: 'nowrap' }}>{completedStages.length}/15 stages</span>
@@ -894,15 +946,53 @@ export default function Roadmap() {
           <h1 style={{ fontSize: 'clamp(30px, 6vw, 54px)', fontWeight: 800, lineHeight: 1.1, background: 'linear-gradient(135deg, #e2e8f0 0%, #818cf8 50%, #f472b6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             FROM ZERO TO<br />FREELANCE AI ENGINEER
           </h1>
+<<<<<<< HEAD
+          <p
+            style={{
+              marginTop: 16,
+              color: '#475569',
+              fontSize: 15,
+              lineHeight: 1.8,
+              maxWidth: 560,
+            }}
+          >
+            15 stages. Every skill, tool, and critical gap — including
+            deployment, async, OAuth 2.0, business integrations, and freelance
+            strategy that every other roadmap skips.
+=======
           <p style={{ marginTop: 16, color: '#64748b', fontSize: 15, lineHeight: 1.8, maxWidth: 580 }}>
             15 stages. Every skill, tool, and critical gap — track your progress and become a freelance AI automation engineer.
+>>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
           </p>
 
           <div className="header-stats" style={{ display: 'flex', gap: 28, marginTop: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
             {[['15', 'Total Stages'], [`${weeksLeft}w`, 'Weeks Left'], [`${streak}🔥`, 'Day Streak'], [completedStages.length > 0 ? `${completedStages.length}` : '0', 'Completed']].map(([num, label]) => (
               <div key={label}>
+<<<<<<< HEAD
+                <div
+                  style={{
+                    fontFamily: "'Syne', sans-serif",
+                    fontSize: 22,
+                    fontWeight: 800,
+                    color: '#818cf8',
+                  }}
+                >
+                  {num}
+                </div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: '#2d3050',
+                    letterSpacing: '0.12em',
+                    marginTop: 2,
+                  }}
+                >
+                  {label}
+                </div>
+=======
                 <div style={{ fontSize: 24, fontWeight: 800, color: '#818cf8' }}>{num}</div>
                 <div style={{ fontSize: 12, color: '#374151', marginTop: 2, fontWeight: 500 }}>{label}</div>
+>>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
               </div>
             ))}
             {lastActive && (
@@ -948,9 +1038,50 @@ export default function Roadmap() {
                     <div style={{ fontSize: 11, fontWeight: 700, color: group.color, letterSpacing: '0.14em' }}>{group.label}</div>
                     <div style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>{group.subtitle}</div>
                   </div>
+<<<<<<< HEAD
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: "'Syne', sans-serif",
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: '#e2e8f0',
+                        }}
+                      >
+                        {stage.title}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 12,
+                          letterSpacing: '0.12em',
+                          padding: '2px 7px',
+                          borderRadius: 3,
+                          background: stage.color + '18',
+                          color: stage.color,
+                          border: `1px solid ${stage.color}35`,
+                        }}
+                      >
+                        {stage.tag}
+                      </span>
+                    </div>
+                    <div
+                      style={{ fontSize: 13, color: '#374151', marginTop: 3 }}
+                    >
+                      {stage.duration}
+                    </div>
+=======
                   <div style={{ flex: 1, height: 1, background: '#1a1d2e', marginLeft: 8 }} />
                   <div style={{ fontSize: 12, color: '#2d3050', fontWeight: 500 }}>
                     {groupStages.filter(s => completedStages.includes(s.number)).length}/{groupStages.length}
+>>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -965,6 +1096,45 @@ export default function Roadmap() {
           </div>
         )}
 
+<<<<<<< HEAD
+                {isOpen && (
+                  <div
+                    style={{
+                      padding: '0 20px 24px',
+                      borderTop: `1px solid ${stage.color}18`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        background: stage.color + '08',
+                        border: `1px solid ${stage.color}20`,
+                        borderLeft: `3px solid ${stage.color}`,
+                        borderRadius: 8,
+                        padding: '12px 16px',
+                        margin: '16px 0',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: stage.color,
+                          letterSpacing: '0.12em',
+                          marginBottom: 5,
+                        }}
+                      >
+                        WHY THIS STAGE MATTERS
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 15,
+                          color: '#94a3b8',
+                          lineHeight: 1.7,
+                        }}
+                      >
+                        {stage.why}
+                      </div>
+                    </div>
+=======
         <div style={{ marginTop: 40, paddingTop: 20, borderTop: '1px solid #1a1d2e', textAlign: 'center' }}>
           <div style={{ fontSize: 12, color: '#1e2030', letterSpacing: '0.1em', fontWeight: 500 }}>
             CLICK ANY STAGE TO EXPAND · CHECK OFF TOPICS AS YOU LEARN · BUILD IN ORDER
@@ -973,17 +1143,154 @@ export default function Roadmap() {
       </div>
     </div>
   );
+>>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
 
+<<<<<<< HEAD
+                    {stage.topics.length > 0 && (
+                      <div style={{ marginBottom: 20 }}>
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: '#2d3050',
+                            letterSpacing: '0.12em',
+                            marginBottom: 10,
+                          }}
+                        >
+                          TOPICS TO MASTER
+                        </div>
+                        <div
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns:
+                              'repeat(auto-fill, minmax(300px, 1fr))',
+                            gap: 7,
+                          }}
+                        >
+                          {stage.topics.map((t, idx) => (
+                            <div
+                              key={idx}
+                              style={{
+                                fontSize: 15,
+                                color: '#4b5563',
+                                lineHeight: 1.5,
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                              }}
+                            >
+                              <span
+                                style={{
+                                  color: stage.color,
+                                  marginRight: 8,
+                                  marginTop: 2,
+                                  flexShrink: 0,
+                                  opacity: 0.7,
+                                }}
+                              >
+                                →
+                              </span>
+                              <span>{t}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+=======
   function renderStage(stage: typeof stages[0]) {
     const status = getStageStatus(stage.number);
     const topicsDone = stageProgress(stage.number);
     const stagePct = stage.topics.length > 0 ? Math.round((topicsDone / stage.topics.length) * 100) : 0;
     const stageOpen = isOpen(stage.number);
     const topicsState = completedTopics[stage.number] || Array(stage.topics.length).fill(false);
+>>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
 
+<<<<<<< HEAD
+                    {stage.projects.length > 0 && (
+                      <div style={{ marginBottom: 16 }}>
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: '#2d3050',
+                            letterSpacing: '0.12em',
+                            marginBottom: 10,
+                          }}
+                        >
+                          PRACTICE PROJECTS
+                        </div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 7,
+                          }}
+                        >
+                          {stage.projects.map((p, idx) => (
+                            <div
+                              key={idx}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: 9,
+                                fontSize: 15,
+                                color: '#6b7280',
+                              }}
+                            >
+                              <span
+                                style={{
+                                  color: stage.color,
+                                  fontSize: 7,
+                                  marginTop: 4,
+                                  flexShrink: 0,
+                                }}
+                              >
+                                ◆
+                              </span>
+                              <span>{p}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+=======
     const borderColor = status === 'done' ? '#34d399' : status === 'active' ? stage.color : '#1e2030';
     const bgColor = status === 'done' ? '#0a1a12' : status === 'active' ? '#0d0d1f' : '#0c0d17';
+>>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
 
+<<<<<<< HEAD
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 10,
+                        padding: '11px 14px',
+                        background: '#0f1117',
+                        borderRadius: 6,
+                        border: '1px solid #1a1d2e',
+                      }}
+                    >
+                      <span
+                        style={{
+                          color: stage.color,
+                          fontSize: 16,
+                          flexShrink: 0,
+                          marginTop: 1,
+                        }}
+                      >
+                        ✓
+                      </span>
+                      <div>
+                        <span
+                          style={{
+                            fontSize: 12,
+                            color: '#2d3050',
+                            letterSpacing: '0.1em',
+                          }}
+                        >
+                          STAGE GOAL —{' '}
+                        </span>
+                        <span style={{ fontSize: 15, color: '#6b7280' }}>
+                          {stage.goal}
+                        </span>
+=======
     return (
       <div key={stage.number} ref={el => { stageRefs.current[stage.number] = el; }}
         className="stage-card"
@@ -1064,6 +1371,7 @@ export default function Roadmap() {
                       <div className="check-box"
                         style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${topicsState[idx] ? stage.color : '#2d3050'}`, background: topicsState[idx] ? stage.color + '25' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: stage.color, marginTop: 2, flexShrink: 0 }}>
                         {topicsState[idx] ? '✓' : ''}
+>>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
                       </div>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flex: 1 }}>
                         <span style={{ fontSize: 11, color: stage.color, opacity: 0.5, minWidth: 20, fontWeight: 600, marginTop: 2 }}>{String(idx + 1).padStart(2, '0')}</span>
@@ -1075,6 +1383,20 @@ export default function Roadmap() {
               </div>
             )}
 
+<<<<<<< HEAD
+        <div
+          style={{
+            marginTop: 40,
+            paddingTop: 20,
+            borderTop: '1px solid #1a1d2e',
+            textAlign: 'center',
+          }}
+        >
+          <div
+            style={{ fontSize: 13, color: '#1e2030', letterSpacing: '0.1em' }}
+          >
+            CLICK ANY STAGE TO EXPAND · FILTER BY TAG ABOVE · BUILD IN ORDER
+=======
             {stage.projects.length > 0 && (
               <div style={{ marginBottom: 18 }}>
                 <div style={{ fontSize: 11, color: '#475569', letterSpacing: '0.12em', marginBottom: 12, fontWeight: 600 }}>PRACTICE PROJECTS</div>
@@ -1106,6 +1428,7 @@ export default function Roadmap() {
                 style={{ width: '100%', minHeight: 80, background: '#0f1117', border: '1px solid #1a1d2e', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#94a3b8', lineHeight: 1.6 }}
               />
             </div>
+>>>>>>> c9704e7ee37b263731d8f2ebe82230dcb6b417df
           </div>
         )}
       </div>
