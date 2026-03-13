@@ -552,7 +552,7 @@ function AuthScreen({ onAuth }: { onAuth: () => void }) {
     if (!forgotEmail) { setForgotError('Please enter your email.'); setForgotLoading(false); return; }
 
     const { error: e } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
+      redirectTo: `${window.location.origin}/`,
     });
 
     if (e) { setForgotError(e.message); }
